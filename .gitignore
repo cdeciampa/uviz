@@ -29,6 +29,7 @@ MANIFEST
 .DS_Store
 mpas_tools.yml
 pyproject.toml
+.gitignore
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
