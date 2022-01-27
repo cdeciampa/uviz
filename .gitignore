@@ -27,7 +27,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 .DS_Store
-mpas_tools.yml
+#mpas_tools.yml
 pyproject.toml
 
 # words
