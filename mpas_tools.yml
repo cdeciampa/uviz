@@ -1,4 +1,4 @@
-name: geocat
+name: mpas_tools
 channels:
   - ncar
   - conda-forge
