@@ -1,6 +1,7 @@
 name: geocat
 channels:
   - conda-forge
+  - ncar
   - defaults
 dependencies:
   - geocat-comp
