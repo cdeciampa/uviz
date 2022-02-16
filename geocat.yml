@@ -1,0 +1,13 @@
+name: geocat
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - geocat-comp
+  - cartopy
+  - matplotlib
+  - ipykernel
+  - geocat-viz
+  - netcdf4
+  - geocat-datafiles
+  - ncview
