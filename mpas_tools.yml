@@ -178,4 +178,3 @@ dependencies:
   - zipp=3.5.0
   - zlib=1.2.11
   - zstd=1.5.0
-prefix: /Users/cnd5285/opt/anaconda3/envs/geocat
