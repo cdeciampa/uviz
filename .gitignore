@@ -134,4 +134,4 @@ dmypy.json
 .pyre/
 
 #ibtracs
-/Users/cnd5285/OneDrive - The Pennsylvania State University/Thesis_Research/github/mpas_tools/mpas_tools/tempest_extremes/ibtracs.since1980.list.v04r00.csv
+mpas_tools/tempest_extremes/ibtracs.since1980.list.v04r00.csv
