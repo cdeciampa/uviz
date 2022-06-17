@@ -69,11 +69,21 @@ SN_MINWIND=10.0
 SN_MINLEN=10
 
 NCPU=80
-STRDETECT="--verbosity 0 --timestride 1 ${CONNECTFLAG} --out cyclones_tempest.${DATESTRING} --closedcontourcmd PSL,${DCU_PSLFOMAG},${DCU_PSLFODIST},0;${DCU_WCVAR},${DCU_WCFOMAG},${DCU_WCFODIST},${DCU_WCMAXOFFSET} --mergedist ${DCU_MERGEDIST} --searchbymin PSL --outputcmd PSL,min,0;_VECMAG(UBOT,VBOT),max,2;PHIS,max,0"
+STRDETECT="--verbosity 0 --timestride 1 ${CONNECTFLAG} 
+--out cyclones_tempest.${DATESTRING} 
+--closedcontourcmd PSL,${DCU_PSLFOMAG},${DCU_PSLFODIST},0;${DCU_WCVAR},${DCU_WCFOMAG},${DCU_WCFODIST},${DCU_WCMAXOFFSET} 
+--mergedist ${DCU_MERGEDIST} 
+--searchbymin PSL 
+--outputcmd PSL,min,0;_VECMAG(UBOT,VBOT),max,2;PHIS,max,0"
 echo $STRDETECT
 touch cyclones.${DATESTRING}
+
 ## Run the "detect" stage in parallel using the settings from STRDETECT above.
 mpirun --np ${NCPU} --hostfile $PBS_NODEFILE  ${TEMPESTEXTREMESDIR}/bin/DetectNodes --in_data_list "${FILELISTNAME}" ${STRDETECT} </dev/null
+# okay so --np 80 is the number of parallel MPI processes (4 nodes x 20 processors per node)
+# --hostfile is specific to ROAR, it's a file where all relevant node hostnames are stored for a job
+# ./DetectNodes 
+
 
 ## Glue individual cyclone files together into one big candidate file
 cat cyclones_tempest.${DATESTRING}* >> cyclones.${DATESTRING}
