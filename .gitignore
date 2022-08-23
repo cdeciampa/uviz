@@ -1,3 +1,10 @@
+# ibtracs and other large files
+mpas_tools/tempest_extremes/ibtracs.since1980.list.v04r00.csv
+mpas_tools/tempest_extremes/IBTrACS.ALL.v04r00.nc
+mpas_tools/debugging_notebooks/datashader_mpas.ipynb
+mpas_tools/debugging_notebooks/datashader_hires_sandbox.ipynb
+mpas_tools/debugging_notebooks/datashader_lowres.ipynb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -133,10 +140,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-#ibtracs
+# ibtracs and other huge files
 mpas_tools/tempest_extremes/ibtracs.since1980.list.v04r00.csv
 mpas_tools/tempest_extremes/IBTrACS.ALL.v04r00.nc
 mpas_tools/debugging_notebooks/datashader_mpas.ipynb
 mpas_tools/debugging_notebooks/datashader_hires_sandbox.ipynb
 mpas_tools/debugging_notebooks/datashader_lowres.ipynb
-mpas_tools/tempest_extremes/ibtracs.since1980.list.v04r00.csv
