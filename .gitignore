@@ -134,8 +134,12 @@ dmypy.json
 .pyre/
 
 #ibtracs
+<<<<<<< HEAD
 mpas_tools/tempest_extremes/ibtracs.since1980.list.v04r00.csv
 mpas_tools/tempest_extremes/IBTrACS.ALL.v04r00.nc
 mpas_tools/debugging_notebooks/datashader_mpas.ipynb
 mpas_tools/debugging_notebooks/datashader_hires_sandbox.ipynb
 mpas_tools/debugging_notebooks/datashader_lowres.ipynb
+=======
+mpas_tools/tempest_extremes/ibtracs.since1980.list.v04r00.csv
+>>>>>>> 38bc48be3da00c84a983981d1afdf4b3a051afb2
