@@ -12,15 +12,19 @@ def read_tempest_ASCII(file, colnames):
     df['time'] = pd.to_datetime(df[['year', 'month', 'day', 'hour']], errors='coerce')
     
     # Drops year, month, day, hour columns
-    df = df[['time', 'lon_x', 'lat_y', 'lon', 'lat', 'slp', 'wsp', 'sfc_phi']]
+    df = df.drop(columns=['year', 'month', 'day', 'hour'])
     
     # Selects indices where a new track starts, assigns to array
-    run_idx = df[df.lon_x=='start'].index.tolist()
+    run_idx = df[df[colnames[0]]=='start'].index.tolist()
 
     # Separates dataframe into individual dataframes, split on new tracks
     dfs = [df.iloc[run_idx[n]+1:run_idx[n+1]] for n in range(len(run_idx)-1)]
     
+    # ok I have no idea what happened here but I'm saving this block in case I need it again
     # Drops lon_x and lat_y columns
+#     dfs = [dfi[['time', 'lon', 'lat', 'slp', 'wsp', 'sfc_phi']] for dfi in dfs]
+
+    # Drops timestep column
     dfs = [dfi[['time', 'lon', 'lat', 'slp', 'wsp', 'sfc_phi']] for dfi in dfs]
     
     # Resets index from previous dataframe splits
@@ -29,6 +33,10 @@ def read_tempest_ASCII(file, colnames):
     # Creates storm IDs
     for i, dfi in enumerate(dfs):
         dfi['tempest_ID'] = f'storm_{i}'
+    
+    # Calculates translation speed
+#     dfs = [dfi.apply(lambda x: haversine_vector((x.lat, x.lon), (x.lat.shift(1), x.lon.shift(1)), 
+#                                                                unit='m', normalize=True)) for dfi in dfs]
     
     # Merges dfs back together
     df_concat = pd.concat([dfi for dfi in dfs]).reset_index(drop=True)
