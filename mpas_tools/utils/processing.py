@@ -134,43 +134,49 @@ ibtracs_vars = [
 
 def saffir_simpson(wsp, units):
     if units == 'm/s':
-        if wsp < 33:
+        if wsp <= 17.0:
+            return 'Tropical Depression'
+        elif 17.0 < wsp < 33:
             return 'Tropical Storm'
-        elif 33 <= wsp <= 42:
+        elif 33.0 <= wsp <= 42.0:
             return 'Category 1'
-        elif 42 < wsp <= 49:
+        elif 42.0 < wsp <= 49.0:
             return 'Category 2'
-        elif 49 < wsp <= 57:
+        elif 49.0 < wsp <= 57.0:
             return 'Category 3'
-        elif 57 < wsp <= 70:
+        elif 57.0 < wsp <= 70.0:
             return 'Category 4'
-        elif wsp > 70:
+        elif wsp > 70.0:
             return 'Category 5'
     elif units == 'knots' or units == 'kts':
-        if wsp < 64:
+        if wsp <= 33.0:
+            return 'Tropical Depression'
+        elif 33.0 < wsp < 64:
             return 'Tropical Storm'
-        elif 64 <= wsp <= 82:
+        elif 64.0 <= wsp <= 82.0:
             return 'Category 1'
-        elif 82 < wsp <= 95:
+        elif 82.0 < wsp <= 95.0:
             return 'Category 2'
-        elif 95 < wsp <= 112:
+        elif 95.0 < wsp <= 112.0:
             return 'Category 3'
-        elif 112 < wsp <= 136:
+        elif 112.0 < wsp <= 136.0:
             return 'Category 4'
-        elif wsp > 136:
+        elif wsp > 136.0:
             return 'Category 5'
     elif units == 'mph':
-        if wsp < 74:
+        if wsp <= 38.0:
+            return 'Tropical Depression'
+        elif 38 < wsp < 74.0:
             return 'Tropical Storm'
-        elif 74 <= wsp <= 95:
+        elif 74.0 <= wsp <= 95.0:
             return 'Category 1'
-        elif 95 < wsp <= 110:
+        elif 95.0 < wsp <= 110.0:
             return 'Category 2'
-        elif 110 < wsp <= 129:
+        elif 110.0 < wsp <= 129.0:
             return 'Category 3'
-        elif 129 < wsp < 157:
+        elif 129.0 < wsp < 157.0:
             return 'Category 4'
-        elif wsp >= 157:
+        elif wsp >= 157.0:
             return 'Category 5'
     else:
         raise ValueError("Wind speed units must be 'm/s', 'kts', or 'mph'.")
