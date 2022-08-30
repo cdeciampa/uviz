@@ -77,10 +77,20 @@ def nonlinear_colorbar(var_name=None):
 
 def basin_bboxes(basin_name):
     if basin_name == 'north atlantic':
-        west_coord = -100.0+360
+        west_coord = -105.0+360
         east_coord = -5.0+360
-        north_coord = 50.0
+        north_coord = 70.0
         south_coord = 0.0
+    elif basin_name == 'north atlantic zoomed':
+        west_coord = -100.0+360
+        east_coord = -15.0+360
+        north_coord = 50.0
+        south_coord = 7.5
+    elif basin_name == 'florida':
+        west_coord = -90.0+360
+        east_coord = -72.5+360
+        north_coord = 32.5
+        south_coord = 20.0
     elif basin_name == 'south atlantic':
         west_coord = -105.0+360
         east_coord = -5.0+360
