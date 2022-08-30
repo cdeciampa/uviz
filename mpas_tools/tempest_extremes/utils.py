@@ -31,8 +31,10 @@ def read_tempest_ASCII(file, colnames):
     dfs = [dfi.reset_index(drop=True) for dfi in dfs]
     
     # Creates storm IDs
+#     max_digits = len(str(max([len(dfi) for dfi in dfs])))
+#     print(max_digits)
     for i, dfi in enumerate(dfs):
-        dfi['tempest_ID'] = f'storm_{i}'
+        dfi['tempest_ID'] = f'storm_{str(i).zfill(4)}'
     
     # Calculates translation speed
 #     dfs = [dfi.apply(lambda x: haversine_vector((x.lat, x.lon), (x.lat.shift(1), x.lon.shift(1)), 

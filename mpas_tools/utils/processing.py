@@ -166,7 +166,7 @@ def saffir_simpson(wsp, units):
     elif units == 'mph':
         if wsp <= 38.0:
             return 'Tropical Depression'
-        elif 38 < wsp < 74.0:
+        elif 38.0 < wsp < 74.0:
             return 'Tropical Storm'
         elif 74.0 <= wsp <= 95.0:
             return 'Category 1'
@@ -180,6 +180,7 @@ def saffir_simpson(wsp, units):
             return 'Category 5'
     else:
         raise ValueError("Wind speed units must be 'm/s', 'kts', or 'mph'.")
+        
     
 def read_tempest(file, colnames):
     
