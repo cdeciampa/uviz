@@ -100,7 +100,7 @@ def set_up_mesh(mesh_ds, n_workers=1):
     # Guarantees consistent clockwise winding order (required by Datashade and Matplotlib)
     tris = orderCCW(lonCell,latCell,tris)
 
-    # Unzip the mesh along a constant line of longitude for PCS coordinates (central_longitude=0.0)
+    # Unzip the mesh along a constant line of longitude for projected coordinate system (PCS) coordinates (central_longitude=0.0)
     central_longitude = 0.0
     projection = ccrs.Robinson(central_longitude=central_longitude)
     tris = unzipMesh(lonCell,tris,90.0)
