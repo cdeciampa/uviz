@@ -1,6 +1,34 @@
 import matplotlib.colors as mcolors
 import numpy as np
 
+def sshws_color(wsp, units='m/s'):
+    category = saffir_simpson(wsp, units)
+    
+    if category == 'Tropical Depression':
+        return '#5EBAFF'
+    elif category == 'Tropical Storm':
+        return '#00FAF4'
+    elif category == 'Category 1':
+        return '#FFF795'
+    elif category == 'Category 2':
+        return '#FFD821'
+    elif category == 'Category 3':
+        return '#FF8F20'
+    elif category == 'Category 4':
+        return '#FF6060'
+    elif category == 'Category 5':
+        return '#C464D9'
+    
+def geog_features(ax, basin='north atlantic zoomed', resolution='10m'):
+
+lons, lats = basin_bboxes(basin)
+ax.set_extent([lons[0], lons[1], lats[0], lats[1]], crs=ccrs.PlateCarree())
+ax.add_feature(cfeature.COASTLINE.with_scale(resolution), linewidth=0.5, edgecolor='#323232', zorder=3)
+#ax.add_feature(cfeature.BORDERS.with_scale(resolution), linewidth=0.5, edgecolor='#323232', zorder=3)
+ax.add_feature(cfeature.STATES.with_scale(resolution), linewidth=0.5, facecolor='#EBEBEB', edgecolor='#616161', zorder=2)
+ax.add_feature(cfeature.LAKES.with_scale(resolution), linewidth=0.5, facecolor='#e4f1fa', edgecolor='#616161', zorder=2)
+ax.add_feature(cfeature.OCEAN.with_scale(resolution), facecolor='#e4f1fa', edgecolor='face', zorder=1)
+
 def nonlinear_colorbar(var_name=None):
     if var_name == 'PRECIP':
         colors = [
@@ -23,49 +51,7 @@ def nonlinear_colorbar(var_name=None):
             ]
         levels = [0.1, 0.25, 0.50, 0.75, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0,
               6.0, 8.0, 10.]
-    elif var_name == 'FLUT':
-        colors = [
-            '#ffffff',  # 250+ W/m^2
-            '#55fbfd',  # 245 - 250 W/m^2
-            '#46d0e2',  # 240 - 245 W/m^2
-            '#4dc1d7',  # 235 - 240 W/m^2
-            '#40b3d1',  # 230 - 235 W/m^2
-            '#3ca6ca',  # 225 - 230 W/m^2
-            '#3a97c0',  # 220 - 225 W/m^2
-            '#3179ab',  # 215 - 220 W/m^2
-            '#396fad',  # 210 - 215 W/m^2
-            '#2e5a9b',  # 205 - 210 W/m^2
-            '#2a4f94',  # 200 - 205 W/m^2
-            '#293683',  # 195 - 200 W/m^2
-            '#221f76',  # 190 - 195 W/m^2
-            '#222f6f',  # 185 - 190 W/m^2
-            '#254562',  # 180 - 185 W/m^2
-            '#245657',  # 175 - 180 W/m^2
-            '#2c7150',  # 170 - 175 W/m^2
-            '#338c49',  # 165 - 170 W/m^2
-            '#3eb53d',  # 160 - 165 W/m^2
-            '#44f939',  # 155 - 160 W/m^2
-            '#6cf83a',  # 150 - 155 W/m^2
-            '#92f840',  # 145 - 150 W/m^2
-            '#d8fb3d',  # 140 - 145 W/m^2
-            '#fcda40',  # 135 - 140 W/m^2
-            '#fb822e',  # 130 - 135 W/m^2
-            '#f74127',  # 125 - 130 W/m^2
-            '#f6242a',  # 120 - 125 W/m^2
-            '#a41622',  # 115 - 120 W/m^2
-            '#5c141b',  # 110 - 115 W/m^2
-            '#221615',  # 105 - 110 W/m^2
-            '#3f3f3f',  # 100 - 105 W/m^2
-            '#727175',  #  95 - 100 W/m^2
-            '#babbbd',  #  90 -  95 W/m^2
-            '#ffffff',  #  85 -  90 W/m^2
-        ]
-        levels = np.linspace(355, 75, 35)
-    # elif colorbar_name == 'goes_16':
-    #     colors = [
             
-    elif var_name == 'U10':
-        cmap = 'jet'
         return cmap
     else:
         raise ValueError('fix me.')
@@ -74,6 +60,107 @@ def nonlinear_colorbar(var_name=None):
     norm = mcolors.BoundaryNorm(levels, len(levels))
     
     return cmap
+
+def plot_sshws_segments(ax, df, figtitle=None):
+    
+    proj = ccrs.PlateCarree()
+    for track, track_df in df.groupby('tempest_ID'):
+    
+        lons = track_df['lon'].values
+        lats = track_df['lat'].values
+        wsps = track_df['wsp'].values
+        sshws_cmap = [sshws_color(x, units='m/s') for x in wsps]
+
+        points = np.array([lons, lats]).T.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+        lc = LineCollection(segments, colors=sshws_cmap, zorder=10, transform=proj, 
+                            lw=1.25, path_effects=[pe.Stroke(linewidth=2.0, foreground='#848484'), pe.Normal()])
+        ax.add_collection(lc)
+    
+    lw = 2.0
+    lw_e = 3.0
+    td = mlines.Line2D([], [], ls='-', lw=lw, label='Tropical Depression', color=sshws_color(35, 'mph'),
+                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
+    ts = mlines.Line2D([], [], ls='-', lw=lw, label='Tropical Storm', color=sshws_color(50, 'mph'), 
+                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
+    c1 = mlines.Line2D([], [], ls='-', lw=lw, label='Category 1', color=sshws_color(75, 'mph'), 
+                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
+    c2 = mlines.Line2D([], [], ls='-', lw=lw, label='Category 2', color=sshws_color(100, 'mph'), 
+                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
+    c3 = mlines.Line2D([], [], ls='-', lw=lw, label='Category 3', color=sshws_color(115, 'mph'), 
+                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
+    c4 = mlines.Line2D([], [], ls='-', lw=lw, label='Category 4', color=sshws_color(135, 'mph'), 
+                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
+    c5 = mlines.Line2D([], [], ls='-', lw=lw, label='Category 5', color=sshws_color(160, 'mph'), 
+                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
+
+    l = ax.legend(handles = [c5, c4, c3, c2, c1, ts, td], loc='upper right', fontsize=14, shadow=True)
+    l.set_zorder(1001)
+    plt.title(figtitle, fontsize=20)
+    plt.show()
+    
+def plot_sshws_points(ax, df, figtitle=None, j=None, label_tracks=False):
+    
+    proj = ccrs.PlateCarree()
+    for i, (track_ID, track_df) in enumerate(df.groupby('tempest_ID')):
+        track_df = track_df.sort_values(by=['tempest_ID', 'time']).reset_index(drop=True)
+        lons = track_df['lon'].values
+        lats = track_df['lat'].values
+        wsps = track_df['wsp'].values
+        sshws_cmap = [sshws_color(x, units='m/s') for x in wsps]
+        
+        if j == 0:
+            label_pos = [[lons[8]+1.25, lats[8]+0.2], [lons[13]+1.25, lats[13]+0.2], [lons[10]-1.25, lats[10]-0.2]]
+        elif j == 1:
+            label_pos = [[lons[13]-1.25, lats[13]+0.2], [lons[6]-1.25, lats[6]+0.2], [lons[8]-1.25, lats[8]-0.2], [lons[3]+1.25, lats[3]+0.2]]
+        elif j == 2:
+            label_pos = [[lons[13]-1.25, lats[13]-0.2], [lons[11]+1.25, lats[11]+0.2], [lons[-9]-1.25, lats[-9]-0.2], [lons[8]+1.25, lats[8]+0.2]]
+        elif j == 3:
+            label_pos = []
+        elif j == 4:
+            label_pos = [[lons[14]-1.25, lats[14]+0.2], [lons[17]+1.25, lats[17]+0.35], [lons[-10]-1.1, lats[-10]-0.35]]
+        elif j == 5:
+            label_pos = [[lons[11]+1.25, lats[11]+0.2]]
+        elif j == 6:
+            label_pos = []
+        elif j == 7:
+            label_pos = [[lons[4]+1.25, lats[4]+0.2], [lons[0]-1.25, lats[0]-0.2]]
+        elif j == 8:
+            label_pos = [[lons[10]-1.25, lats[10]+0.2], [lons[14]-1.25, lats[14]-0.2]]
+
+        points = np.array([lons, lats]).T.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+        lc = LineCollection(segments, colors='k', zorder=9, transform=proj, lw=0.5, ls='--')
+        ax.add_collection(lc)
+        ax.scatter(lons, lats, c=sshws_cmap, zorder=10, edgecolors='k', lw=0.35, s=30)
+        # This labels individual tracks within model runs
+        if label_tracks == True:
+            ax.text(label_pos[i][0], label_pos[i][1], track_ID, transform=proj, fontsize=7.5, 
+                    path_effects=[pe.Stroke(linewidth=1.75, foreground='w'), pe.Normal()], clip_on=True, ha='center', va='center')
+    
+    # Marker properties
+    mew = 0.25     # marker edge width
+    mec = 'k'      # marker edge color
+    ms = 6         # marker size
+    #mfc           # marker face color
+    
+    td = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Tropical Depression', mfc=sshws_color(35, 'mph'), color='k', lw=0.5, ls='--')
+    ts = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Tropical Storm', mfc=sshws_color(50, 'mph'), color='k', lw=0.5, ls='--')
+    c1 = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Category 1', mfc=sshws_color(75, 'mph'), color='k', lw=0.5, ls='--')
+    c2 = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Category 2', mfc=sshws_color(100, 'mph'), color='k', lw=0.5, ls='--')
+    c3 = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Category 3', mfc=sshws_color(115, 'mph'), color='k', lw=0.5, ls='--')
+    c4 = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Category 4', mfc=sshws_color(135, 'mph'), color='k', lw=0.5, ls='--')
+    c5 = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Category 5', mfc=sshws_color(160, 'mph'), color='k', lw=0.5, ls='--')
+
+    l = ax.legend(handles = [c5, c4, c3, c2, c1, ts, td], loc='upper right', 
+                  fontsize=10, shadow=False)
+    l.set_zorder(1001)
+    plt.title(figtitle)
+    #plt.show()
+    
+
 
 def basin_bboxes(basin_name):
     if basin_name == 'north atlantic':
