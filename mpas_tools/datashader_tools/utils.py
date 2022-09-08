@@ -114,8 +114,11 @@ def datashader_wrapper(mesh_ds, unstructured_ds, primalVarName, time, level=None
                        pixel_height=400, pixel_width=400, pixel_ratio=1, x_sampling=None, 
                        y_sampling=None, lon_range=None, lat_range=None):
     
-    # Selects target variable from dataset based on timestep
-    primalVar = unstructured_ds[primalVarName].isel(time=time).values
+    # Selects target variable from dataset based on timestep (suppresses error if no time dimension)
+    try:
+        primalVar = unstructured_ds[primalVarName].isel(time=time).values
+    except ValueError:
+        primalVar = unstructured_ds[primalVarName].values
     
     if np.ndim(primalVar) > 1 and level==None:
         raise ValueError('Select a level to knock this down to a 1D array.')
@@ -123,6 +126,7 @@ def datashader_wrapper(mesh_ds, unstructured_ds, primalVarName, time, level=None
         primalVar = unstructured_ds[primalVarName].sel(lev=level, method='nearest').isel(time=time).values
     
     xPCS, yPCS, tris, n_workers, projection = set_up_mesh(mesh_ds)
+    # Possibly use xPCS, yPCS and tris to calc vorticity and other derived functions
     
     trimesh = createHVTriMesh(xPCS,yPCS,tris, primalVar,n_workers=n_workers)
     
