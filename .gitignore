@@ -4,6 +4,7 @@ mpas_tools/tempest_extremes/IBTrACS.ALL.v04r00.nc
 mpas_tools/debugging_notebooks/datashader_mpas.ipynb
 mpas_tools/debugging_notebooks/datashader_hires_sandbox.ipynb
 mpas_tools/debugging_notebooks/datashader_lowres.ipynb
+mpas_tools/debugging_notebooks/track_1279_wrangling.ipynb
 mpas_tools/figs/flut_gif
 
 # Byte-compiled / optimized / DLL files
