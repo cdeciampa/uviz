@@ -1,11 +1,11 @@
 # ibtracs and other large files
-src/tempest_extremes/ibtracs.since1980.list.v04r00.csv
-src/tempest_extremes/IBTrACS.ALL.v04r00.nc
-src/debugging_notebooks/datashader_mpas.ipynb
-src/debugging_notebooks/datashader_hires_sandbox.ipynb
-src/debugging_notebooks/datashader_lowres.ipynb
-src/debugging_notebooks/track_1279_wrangling.ipynb
-src/figs/flut_gif
+*ibtracs.since1980.list.v04r00.csv
+*IBTrACS.ALL.v04r00.nc
+*datashader_mpas.ipynb
+*datashader_hires_sandbox.ipynb
+*datashader_lowres.ipynb
+*track_1279_wrangling.ipynb
+*figs/flut_gif/*.png
 mpas_tools.egg-info
 
 # Byte-compiled / optimized / DLL files
