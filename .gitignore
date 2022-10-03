@@ -6,6 +6,9 @@
 *datashader_lowres.ipynb
 *track_1279_wrangling.ipynb
 *figs/flut_gif/*.png
+*prototype_sims.ipynb
+*mpas_vorticity.ipynb
+*parent_sims_testing.ipynb
 mpas_tools.egg-info
 
 # Byte-compiled / optimized / DLL files
@@ -150,3 +153,4 @@ mpas_tools/debugging_notebooks/datashader_mpas.ipynb
 mpas_tools/debugging_notebooks/datashader_hires_sandbox.ipynb
 mpas_tools/debugging_notebooks/datashader_lowres.ipynb
 *E2-MET-WKML034*
+**/*.ipynb

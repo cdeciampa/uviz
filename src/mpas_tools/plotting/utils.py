@@ -1,8 +1,88 @@
 import matplotlib.colors as mcolors
 import numpy as np
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 
-def sshws_color(wsp, units='m/s'):
-    category = saffir_simpson(wsp, units)
+def ssh_wsp(wsp, units):
+    if units == 'm/s':
+        if wsp <= 17.0:
+            return 'Tropical Depression'
+        elif 17.0 < wsp < 33:
+            return 'Tropical Storm'
+        elif 33.0 <= wsp <= 42.0:
+            return 'Category 1'
+        elif 42.0 < wsp <= 49.0:
+            return 'Category 2'
+        elif 49.0 < wsp <= 57.0:
+            return 'Category 3'
+        elif 57.0 < wsp <= 70.0:
+            return 'Category 4'
+        elif wsp > 70.0:
+            return 'Category 5'
+    elif units == 'knots' or units == 'kts':
+        if wsp <= 33.0:
+            return 'Tropical Depression'
+        elif 33.0 < wsp < 64:
+            return 'Tropical Storm'
+        elif 64.0 <= wsp <= 82.0:
+            return 'Category 1'
+        elif 82.0 < wsp <= 95.0:
+            return 'Category 2'
+        elif 95.0 < wsp <= 112.0:
+            return 'Category 3'
+        elif 112.0 < wsp <= 136.0:
+            return 'Category 4'
+        elif wsp > 136.0:
+            return 'Category 5'
+    elif units == 'mph':
+        if wsp <= 38.0:
+            return 'Tropical Depression'
+        elif 38.0 < wsp < 74.0:
+            return 'Tropical Storm'
+        elif 74.0 <= wsp <= 95.0:
+            return 'Category 1'
+        elif 95.0 < wsp <= 110.0:
+            return 'Category 2'
+        elif 110.0 < wsp <= 129.0:
+            return 'Category 3'
+        elif 129.0 < wsp < 157.0:
+            return 'Category 4'
+        elif wsp >= 157.0:
+            return 'Category 5'
+    else:
+        raise ValueError("Wind speed units must be 'm/s', 'kts', or 'mph'.")
+        
+# According to Klotzbach et. al., 2020
+# Modified for TS and TD designation using Kantha, 2006
+def ssh_mslp(slp, unit='pascal'):
+    pascals = ['pascal', 'Pascal', 'pa', 'Pa', 'pascals', 'Pascals']
+    hPa = ['mb', 'milibars', 'hPa', 'hectopascals', 'Hectopascals']
+    
+    if unit in pascals:
+        slp = slp/100
+    
+    if slp <= 925:
+        return 'Category 5'
+    elif 946 >= slp > 925:
+        return 'Category 4'
+    elif 960 >= slp > 946:
+        return 'Category 3'
+    elif 975 >= slp > 960:
+        return 'Category 2'
+    elif 990 >= slp > 975:
+        return 'Category 1'
+    elif 1000 > slp > 990:
+        return 'Tropical Storm'
+    elif slp >= 1000:
+        return 'Tropical Depression'
+
+def sshws_color(var, units):
+    wsp_units = ['m/s', 'knots', 'kts', 'mph']
+    pres_units = ['pascal', 'Pascal', 'pa', 'Pa', 'pascals', 'Pascals', 'mb', 'milibars', 'hPa', 'hectopascals', 'Hectopascals']
+    if units in wsp_units:
+        category = ssh_wsp(var, units)
+    elif units in pres_units:
+        category = ssh_mslp(var, units)
     
     if category == 'Tropical Depression':
         return '#5EBAFF'
@@ -20,14 +100,13 @@ def sshws_color(wsp, units='m/s'):
         return '#C464D9'
     
 def geog_features(ax, basin='north atlantic zoomed', resolution='10m'):
-
-lons, lats = basin_bboxes(basin)
-ax.set_extent([lons[0], lons[1], lats[0], lats[1]], crs=ccrs.PlateCarree())
-ax.add_feature(cfeature.COASTLINE.with_scale(resolution), linewidth=0.5, edgecolor='#323232', zorder=3)
-#ax.add_feature(cfeature.BORDERS.with_scale(resolution), linewidth=0.5, edgecolor='#323232', zorder=3)
-ax.add_feature(cfeature.STATES.with_scale(resolution), linewidth=0.5, facecolor='#EBEBEB', edgecolor='#616161', zorder=2)
-ax.add_feature(cfeature.LAKES.with_scale(resolution), linewidth=0.5, facecolor='#e4f1fa', edgecolor='#616161', zorder=2)
-ax.add_feature(cfeature.OCEAN.with_scale(resolution), facecolor='#e4f1fa', edgecolor='face', zorder=1)
+    lons, lats = basin_bboxes(basin)
+    ax.set_extent([lons[0], lons[1], lats[0], lats[1]], crs=ccrs.PlateCarree())
+    ax.add_feature(cfeature.COASTLINE.with_scale(resolution), linewidth=0.5, edgecolor='#323232', zorder=3)
+    #ax.add_feature(cfeature.BORDERS.with_scale(resolution), linewidth=0.5, edgecolor='#323232', zorder=3)
+    ax.add_feature(cfeature.STATES.with_scale(resolution), linewidth=0.5, facecolor='#EBEBEB', edgecolor='#616161', zorder=2)
+    ax.add_feature(cfeature.LAKES.with_scale(resolution), linewidth=0.5, facecolor='#e4f1fa', edgecolor='#616161', zorder=2)
+    ax.add_feature(cfeature.OCEAN.with_scale(resolution), facecolor='#e4f1fa', edgecolor='face', zorder=1)
 
 def nonlinear_colorbar(var_name=None):
     if var_name == 'PRECIP':
