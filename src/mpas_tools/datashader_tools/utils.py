@@ -38,13 +38,13 @@ def orderCCW(x,y,tris):
 # 'x' and 'y', an array of triangle indices that addressess the coordinates in 'x' and 'y', 
 # and a data variable 'var'. The data variable's values will annotate the triangle vertices
 
-def createHVTriMesh(x,y,triangle_indices, var,n_workers=1):
+def createHVTriMesh(x,y,triangle_indices, var, varname, n_workers=1):
     # Declare verts array
     verts = np.column_stack([x, y, var])
 
 
     # Convert to pandas
-    verts_df  = pd.DataFrame(verts,  columns=['x', 'y', 'z'])
+    verts_df  = pd.DataFrame(verts,  columns=['Longitude', 'Latitude', varname])
     tris_df   = pd.DataFrame(triangle_indices, columns=['v0', 'v1', 'v2'])
 
     # Convert to dask
@@ -52,7 +52,7 @@ def createHVTriMesh(x,y,triangle_indices, var,n_workers=1):
     tris_ddf = dd.from_pandas(tris_df, npartitions=n_workers)
 
     # Declare HoloViews element
-    tri_nodes = hv.Nodes(verts_ddf, ['x', 'y', 'index'], ['z'])
+    tri_nodes = hv.Nodes(verts_ddf, ['Longitude', 'Latitude', 'index'], [varname])
     trimesh = hv.TriMesh((tris_ddf, tri_nodes))
     return(trimesh)
 
@@ -128,7 +128,7 @@ def datashader_wrapper(mesh_ds, unstructured_ds, primalVarName, time, level=None
     xPCS, yPCS, tris, n_workers, projection = set_up_mesh(mesh_ds)
     # Possibly use xPCS, yPCS and tris to calc vorticity and other derived functions
     
-    trimesh = createHVTriMesh(xPCS,yPCS,tris, primalVar,n_workers=n_workers)
+    trimesh = createHVTriMesh(xPCS,yPCS,tris, primalVar, primalVarName, n_workers=n_workers)
     
     if lon_range != None and lat_range != None:
         x_range, y_range, _ = projection.transform_points(ccrs.PlateCarree(), np.array(lon_range), np.array(lat_range)).T
