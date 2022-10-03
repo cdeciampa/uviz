@@ -5,45 +5,7 @@ import xarray as xr
 
 from haversine import *
 
-from plotting.utils import basin_bboxes
-
-# def calc_point_from_dist(start_coords, distance, bearing, dist_scale='km'):
-#     """
-#     Calculates and returns a point a given distance away.
-#     start_coords :: (tuple or array), give in lon, lat form.
-#     distance :: (int or float)
-#     bearing :: (int or float), give in degrees
-#     dist_scale (optional)
-
-#     """
-    
-#     # Derives Earth's radius based on given length scale.
-#     if dist_scale == 'miles' or dist_scale == 'mi':
-#         radius = 3958.7603
-#     elif dist_scale == 'kilometers' or dist_scale == 'km':
-#         radius = 6371.0072
-#     elif dist_scale == 'meters' or dist_scale == 'm':
-#         radius = (6371.0072)*10E5
-#     else:
-#         raise ValueError('Supply distance in miles, kilometers, or meters.')
-
-#     # Converts degrees to radians
-#     lon1, lat1 = start_coords
-#     bearing = radians(bearing)
-#     lat1 = radians(lat1)
-#     lon1 = radians(lon1)
-
-#     # Calculates endpoint based on distance (modified Haversine)
-#     lat2 = asin((sin(lat1)*cos(distance/radius))+\
-#                 (cos(lat1)*sin(distance/radius)*cos(bearing)))
-#     lon2 = lon1+atan2(sin(bearing)*sin(distance/radius)*cos(lat1), 
-#                       cos(distance/radius)-(sin(lat1)*sin(lat2)))
-    
-#     # Converts radians back to degrees
-#     lat2 = degrees(lat2)
-#     lon2 = degrees(lon2)
-
-#     return (lon2, lat2)
+from mpas_tools.plotting.utils import basin_bboxes
 
 def find_TC_bbox(ds, basin, time, center_dist=100, unit='km'):
     """
@@ -72,12 +34,6 @@ def find_TC_bbox(ds, basin, time, center_dist=100, unit='km'):
     lat = data['lat'].values[0]
     lon = data['lon'].values[0]
     
-    # Spread for target bbox
-    # lon_e = calc_point_from_dist((lon, lat), distance=center_dist, bearing=90, dist_scale='km')[0]
-    # lon_w = calc_point_from_dist((lon, lat), distance=center_dist, bearing=270, dist_scale='km')[0]
-    # lat_n = calc_point_from_dist((lon, lat), distance=center_dist, bearing=0, dist_scale='km')[1]
-    # lat_s = calc_point_from_dist((lon, lat), distance=center_dist, bearing=180, dist_scale='km')[1]
-    
     # Normalizes coords to [-180, 180] and [-90, 90]
     #lat, lon = _normalize(lat, lon)
     
@@ -97,3 +53,71 @@ def find_TC_bbox(ds, basin, time, center_dist=100, unit='km'):
     lat_range = (lat_s, lat_n)
     
     return lon_range, lat_range
+
+
+def sfc_wind_corr(z_r=64.0, constant=None, wind_factor=None, alpha=0.11, z_0 = 0.0002):
+    """
+    Function to correct lowest level model wind speed to 10m wind speed.
+    
+    Parameters
+    -------
+    z_r : optional, float
+        The height of the lowest model level. If negative, uses CAM default.
+        
+    constant : float
+        The corresponding constant for either power/log correction.
+        
+    wind_factor : str
+        Defines type of correction as either 'power' or 'log'.
+    
+    alpha : optional, float
+    
+    z_0 : optional, float
+        Roughness coefficient, default is 0.0002, corresponding to open ocean.
+    
+    Raises
+    ------
+    NotImplementedError
+        If only one of wind_factor or constant are assigned.
+    ValueError
+        If wind_factor is incorrectly assigned.
+        
+    Returns
+    --------
+    factor : float
+        10 m wind speed correction factor.
+    """
+    
+    if constant is not None and wind_factor is None:
+        raise NotImplementedError("Can't assign a constant without a wind_factor, must assign both.")
+    
+    eps = 1.0E-8 # "Epsilon" value - approaches 0
+    # if wind_factor is not None:
+        # print(f'SURFACEWINDCORRFACTOR: Getting sfc wind correction factor using: {wind_factor} technique.')
+    
+    if z_r < 0.0:
+        z_r = 64.0
+        # print(f'SURFACEWINDCORRFACTOR: Using CAM default lowest model level of: {z_r} m.')
+    
+    if wind_factor == 'power':
+        z_10 = 10.0
+        z_r = 64.0
+        if (constant is not None) and (constant > eps):
+            alpha = constant
+        factor = (z_10/z_r)**alpha
+        # print(f'SURFACEWINDCORRFACTOR: Using factor: {factor}.')
+    elif wind_factor == 'log':
+        # Garratt 1992 -- Wind profile formulation
+        # Wieringa 1993 -- roughness coefficient
+        z_10 = 10.0
+        if (constant is not None) and (constant > eps):
+            z_0 = constant # roughness coefficient (length)
+        factor = 1 + (np.log(z_10/z_r)/np.log(z_r/z_0))
+    elif wind_factor is None and constant is None:
+        # print('SURFACEWINDCORRFACTOR: No correction used.')
+        factor = 1.0
+    else:
+        raise ValueError('SURFACEWINDCORRFACTOR: Incorrect wind correction type. Must assign "power" or "log" if assigning wind_factor.')
+    
+    return factor
+    
