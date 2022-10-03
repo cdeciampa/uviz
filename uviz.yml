@@ -1,0 +1,15 @@
+name: uviz
+channels:
+  - ncar
+  - conda-forge
+  - defaults
+dependencies:
+  - geocat-comp
+  - cartopy
+  - matplotlib
+  - ipykernel
+  - geocat-viz
+  - netcdf4
+  - geocat-datafiles
+  - ncview
+  - run: conda install virtualenv=20.0.33
