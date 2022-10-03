@@ -9,7 +9,9 @@
 *prototype_sims.ipynb
 *mpas_vorticity.ipynb
 *parent_sims_testing.ipynb
-mpas_tools.egg-info
+src/uviz.egg-info
+poetry.lock
+=4.2.0
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -147,10 +149,10 @@ dmypy.json
 .pyre/
 
 # ibtracs and other huge files
-mpas_tools/tempest_extremes/ibtracs.since1980.list.v04r00.csv
-mpas_tools/tempest_extremes/IBTrACS.ALL.v04r00.nc
-mpas_tools/debugging_notebooks/datashader_mpas.ipynb
-mpas_tools/debugging_notebooks/datashader_hires_sandbox.ipynb
-mpas_tools/debugging_notebooks/datashader_lowres.ipynb
+uviz/tempest_extremes/ibtracs.since1980.list.v04r00.csv
+uviz/tempest_extremes/IBTrACS.ALL.v04r00.nc
+uviz/debugging_notebooks/datashader_mpas.ipynb
+uviz/debugging_notebooks/datashader_hires_sandbox.ipynb
+uviz/debugging_notebooks/datashader_lowres.ipynb
 *E2-MET-WKML034*
 **/*.ipynb

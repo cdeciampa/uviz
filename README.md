@@ -1,2 +1,2 @@
-# mpas_tools
+# uviz
 Tools for MPAS/xarray wrangling.
