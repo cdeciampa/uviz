@@ -12,6 +12,11 @@
 src/uviz.egg-info
 poetry.lock
 =4.2.0
+*dask_dx_dy*
+*dxdy*
+**/*.ipynb
+!*tempest_*.ipynb
+!*track_1279_wrangling.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -148,11 +153,3 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# ibtracs and other huge files
-uviz/tempest_extremes/ibtracs.since1980.list.v04r00.csv
-uviz/tempest_extremes/IBTrACS.ALL.v04r00.nc
-uviz/debugging_notebooks/datashader_mpas.ipynb
-uviz/debugging_notebooks/datashader_hires_sandbox.ipynb
-uviz/debugging_notebooks/datashader_lowres.ipynb
-*E2-MET-WKML034*
-**/*.ipynb
