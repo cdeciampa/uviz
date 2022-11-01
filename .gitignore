@@ -10,8 +10,8 @@
 *mpas_vorticity.ipynb
 *parent_sims_testing.ipynb
 src/uviz.egg-info
-poetry.lock
-=4.2.0
+#poetry.lock
+#=4.2.0
 *dask_dx_dy*
 *dxdy*
 **/*.ipynb
@@ -48,7 +48,7 @@ share/python-wheels/
 MANIFEST
 .DS_Store
 #mpas_tools.yml
-pyproject.toml
+#pyproject.toml
 
 # words
 
