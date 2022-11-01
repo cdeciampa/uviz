@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "uviz"
+version = '0.1.0dev0'
+description = "Tools for Unstructured model grid VIsualiZation/wrangling."
+authors = [
+    "Corrine DeCiampa <cdeciampa@gmail.com> <cnd5285@psu.edu>",
+]
+license = "MIT"
+
+readme = "README.md"
+
+homepage = "https://github.com/cdeciampa/uviz"
+repository = "https://github.com/cdeciampa/uviz"
+documentation = "https://github.com/cdeciampa/uviz"
+
+keywords = ["MPAS", "unstructured", "datashader", "data visualization"]
+
+classifiers = [
+    "Topic :: Software Development",
+    "Framework :: Holoviews, Xarray, Matplotlib",
+    "Programming Language :: Python :: 3",
+]
+
+[tool.poetry.build]
+generate-setup-file = false
+
+# Requirements
+[tool.poetry.dependencies]
+python = "^3.8"
+
+#holoviews = {version = "1.14.9", source = 'conda'}
+#xarray = {version = "2022.3.0", source = 'conda'}
+
+[tool.mypy]
+files = "src"
+mypy_path = "src"
+namespace_packages = true
+explicit_package_bases = true
+show_error_codes = true
+strict = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-expr",
+    "truthy-bool",
+]
