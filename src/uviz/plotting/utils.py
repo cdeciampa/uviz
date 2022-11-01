@@ -61,19 +61,19 @@ def ssh_mslp(slp, unit='pascal'):
     if unit in pascals:
         slp = slp/100
     
-    if slp <= 925:
+    if slp <= 925.0:
         return 'Category 5'
-    elif 946 >= slp > 925:
+    elif 946.0 >= slp > 925.0:
         return 'Category 4'
-    elif 960 >= slp > 946:
+    elif 960.0 >= slp > 946.0:
         return 'Category 3'
-    elif 975 >= slp > 960:
+    elif 975.0 >= slp > 960.0:
         return 'Category 2'
-    elif 990 >= slp > 975:
+    elif 990.0 >= slp > 975.0:
         return 'Category 1'
-    elif 1000 > slp > 990:
+    elif 1000.0 > slp > 990.0:
         return 'Tropical Storm'
-    elif slp >= 1000:
+    elif slp >= 1000.0:
         return 'Tropical Depression'
 
 def sshws_color(var, units):
@@ -257,6 +257,11 @@ def basin_bboxes(basin_name):
         east_coord = -72.5+360
         north_coord = 32.5
         south_coord = 20.0
+    elif basin_name == 'south florida':
+        west_coord = -83.0+360
+        east_coord = -80.0+360
+        north_coord = 29.0
+        south_coord = 24.5
     elif basin_name == 'south atlantic':
         west_coord = -105.0+360
         east_coord = -5.0+360
