@@ -112,7 +112,10 @@ def set_up_mesh(mesh_ds, n_workers=1):
 
 def datashader_wrapper(mesh_ds, unstructured_ds, primalVarName, time, level=None, 
                        pixel_height=400, pixel_width=400, pixel_ratio=1, x_sampling=None, 
-                       y_sampling=None, lon_range=None, lat_range=None):
+                       y_sampling=None, lon_range=None, lat_range=None, **kwargs):
+    """
+    Optional **kwargs
+    """
     
     # Selects target variable from dataset based on timestep (suppresses error if no time dimension)
     try:
@@ -141,6 +144,6 @@ def datashader_wrapper(mesh_ds, unstructured_ds, primalVarName, time, level=None
     # Use precompute so it caches the data internally
     rasterized = hds_rasterize(trimesh, aggregator='mean', precompute=True, height=pixel_height, 
                                width=pixel_width, pixel_ratio=pixel_ratio, x_sampling=x_sampling, 
-                               y_sampling=y_sampling, x_range=x_range, y_range=y_range)
+                               y_sampling=y_sampling, x_range=x_range, y_range=y_range, **kwargs)
     
     return rasterized
