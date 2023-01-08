@@ -15,6 +15,7 @@ src/uviz.egg-info
 *dask_dx_dy*
 *dxdy*
 **/*.ipynb
+!*sample_notebook.ipynb
 !*tempest_*.ipynb
 !*track_1279_wrangling.ipynb
 
