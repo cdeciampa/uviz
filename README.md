@@ -3,6 +3,8 @@ Tools for **U**nstructured climate model grid **VI**suali**Z**ation. Currently o
 
 ![storm_0236_FLUT_resized](https://user-images.githubusercontent.com/66640080/210186304-5bfeeebd-4232-403b-99fb-aab2b7c741b0.gif)
 
+[If you're from AMS, click here!](https://github.com/cdeciampa/uviz/tree/main/src/uviz/figs/ams)
+
 ## Installation
 Coming soon.
 
