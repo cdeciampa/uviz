@@ -3,101 +3,145 @@ import numpy as np
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
-def ssh_wsp(wsp, units):
-    if units == 'm/s':
-        if wsp <= 17.0:
-            return 'Tropical Depression'
-        elif 17.0 < wsp < 33:
-            return 'Tropical Storm'
-        elif 33.0 <= wsp <= 42.0:
-            return 'Category 1'
-        elif 42.0 < wsp <= 49.0:
-            return 'Category 2'
-        elif 49.0 < wsp <= 57.0:
-            return 'Category 3'
-        elif 57.0 < wsp <= 70.0:
-            return 'Category 4'
-        elif wsp > 70.0:
-            return 'Category 5'
-    elif units == 'knots' or units == 'kts':
-        if wsp <= 33.0:
-            return 'Tropical Depression'
-        elif 33.0 < wsp < 64:
-            return 'Tropical Storm'
-        elif 64.0 <= wsp <= 82.0:
-            return 'Category 1'
-        elif 82.0 < wsp <= 95.0:
-            return 'Category 2'
-        elif 95.0 < wsp <= 112.0:
-            return 'Category 3'
-        elif 112.0 < wsp <= 136.0:
-            return 'Category 4'
-        elif wsp > 136.0:
-            return 'Category 5'
-    elif units == 'mph':
-        if wsp <= 38.0:
-            return 'Tropical Depression'
-        elif 38.0 < wsp < 74.0:
-            return 'Tropical Storm'
-        elif 74.0 <= wsp <= 95.0:
-            return 'Category 1'
-        elif 95.0 < wsp <= 110.0:
-            return 'Category 2'
-        elif 110.0 < wsp <= 129.0:
-            return 'Category 3'
-        elif 129.0 < wsp < 157.0:
-            return 'Category 4'
-        elif wsp >= 157.0:
-            return 'Category 5'
-    else:
-        raise ValueError("Wind speed units must be 'm/s', 'kts', or 'mph'.")
+class CustomColorbars():
+    """
+    Class to store my custom outgoing longwave radiation and recipitation colormaps.
+    """
+    def __init__(self, target_cmap):
         
-# According to Klotzbach et. al., 2020
-# Modified for TS and TD designation using Kantha, 2006
-def ssh_mslp(slp, unit='pascal'):
-    pascals = ['pascal', 'Pascal', 'pa', 'Pa', 'pascals', 'Pascals']
-    hPa = ['mb', 'milibars', 'hPa', 'hectopascals', 'Hectopascals']
-    
-    if unit in pascals:
-        slp = slp/100
-    
-    if slp <= 925.0:
-        return 'Category 5'
-    elif 946.0 >= slp > 925.0:
-        return 'Category 4'
-    elif 960.0 >= slp > 946.0:
-        return 'Category 3'
-    elif 975.0 >= slp > 960.0:
-        return 'Category 2'
-    elif 990.0 >= slp > 975.0:
-        return 'Category 1'
-    elif 1000.0 > slp > 990.0:
-        return 'Tropical Storm'
-    elif slp >= 1000.0:
-        return 'Tropical Depression'
+        self.out_cmap, self.out_levels, self.norm = self.get_cmap(target_cmap)
+        
+    def get_cmap(self, target_cmap):
+        
+        if target_cmap == 'FLUT':
+            btemps = np.array([-110, -92.1, -92, -80, -70, -60, -50, -42, -30, -29.9, -20, -10, 0, 10, 20, 30, 40, 57])
+            levels = np.array(list(map(self.T_to_FLUT, btemps)))
+            fracs = levels-self.T_to_FLUT(-110, 'C')
+            fracs = fracs/fracs[-1]
 
-def sshws_color(var, units):
-    wsp_units = ['m/s', 'knots', 'kts', 'mph']
-    pres_units = ['pascal', 'Pascal', 'pa', 'Pa', 'pascals', 'Pascals', 'mb', 'milibars', 'hPa', 'hectopascals', 'Hectopascals']
-    if units in wsp_units:
-        category = ssh_wsp(var, units)
-    elif units in pres_units:
-        category = ssh_mslp(var, units)
-    
-    if category == 'Tropical Depression':
-        return '#5EBAFF'
-    elif category == 'Tropical Storm':
-        return '#00FAF4'
-    elif category == 'Category 1':
-        return '#FFF795'
-    elif category == 'Category 2':
-        return '#FFD821'
-    elif category == 'Category 3':
-        return '#FF8F20'
-    elif category == 'Category 4':
-        return '#FF6060'
-    elif category == 'Category 5':
-        return '#C464D9'
+            flut_colors = ['#ffffff', '#ffffff', '#e6e6e6', '#000000', '#ff1a00', '#e6ff01', '#00e30e', '#010073', '#00ffff', 
+                           '#bebebe', '#acacac', '#999999', '#7e7e7e', '#6c6c6c', '#525252', '#404040', '#262626', '#070707']
+            colormap = mcolors.LinearSegmentedColormap.from_list('FLUT CIMSS', list(zip(fracs, flut_colors)), N=1200)
+            norm = mcolors.Normalize(vmin=levels[0], vmax=levels[-1])
+        
+        elif target_cmap == 'nws_precip':
+            nws_precip_colors = [
+                "#ffffff",  # 0.00 - 0.01 inches  white
+                "#4bd2f7",  # 0.01 - 0.10 inches  light blue
+                "#699fd0",  # 0.10 - 0.25 inches  mid blue
+                "#3c4bac",  # 0.25 - 0.50 inches  dark blue
+                "#3cf74b",  # 0.50 - 1.00 inches  light green
+                "#3cb447",  # 1.00 - 1.50 inches  mid green
+                "#3c8743",  # 1.50 - 2.00 inches  dark green
+                "#1f4723",  # 2.00 - 3.00 inches  darkest green
+                "#f7f73c",  # 3.00 - 4.00 inches  yellow
+                "#fbde88",  # 4.00 - 5.00 inches  weird tan
+                "#f7ac3c",  # 5.00 - 6.00 inches  orange
+                "#c47908",  # 6.00 - 8.00 inches  dark orange
+                "#f73c3c",  # 8.00 - 10.00 inch  bright red
+                "#bf3c3c",  # 10.00 - 15.00 inch  mid red
+                "#6e2b2b",  # 15.00 - 20.00 inch  dark red
+                "#f73cf7",  # 20.00 - 25.00 inch  bright pink
+                "#9974e4",  # 25.00 - 30.00 inch  purple
+                #"#404040",  # 30.00 - 40.00 inch  dark gray because of mpl
+                "#c2c2c2"  # 30.00 - 40.00 inch  gray
+                ]
+            colormap = mcolors.ListedColormap(nws_precip_colors, 'nws_precip')
+            levels = [0.0, 0.01, 0.10, 0.25, 0.50, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0]
+            #levels = [0.01, 0.10, 0.25, 0.50, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0]
+            norm = mcolors.BoundaryNorm(boundaries=levels, ncolors=len(levels))
+        
+        return colormap, levels, norm
+
+    def T_to_FLUT(self, T, unit='C'):
+        if unit == 'C':
+            T += 273.15
+        sigma = 5.6693E-8
+        olr = sigma*(T**4)
+
+        return olr
+
+class SaffirSimpson():
+    def __init__(self, var, units):
+        self.units = units
+        wsp_units = ['m/s', 'knots', 'kts', 'mph']
+        mslp_units = ['pascal', 'Pascal', 'pa', 'Pa', 'pascals', 'Pascals', 'mb', 'millibars', 'hPa', 'hectopascals', 'Hectopascals']
+        
+        if self.units in wsp_units:
+            self.category = self.sshs_wsp(self.var, self.units)
+        elif self.units in mslp_units:
+            self.category = self.sshs_mslp(self.var, self.units)
+            
+        self.color = self.sshs_color()
+        
+    def sshs_wsp(self, wsp, units):
+        """
+        Takes wind speed, converts to mph, returns corresponding category from SSHWS
+        Parameters:
+        -------------
+        wsp : ndarray or variable
+        units : str
+        
+        Returns: category : ndarray
+        """
+        # Converts units to mph so I only needed to write one function.
+        if units == 'm/s':
+            wsp = wsp * 2.2369
+        elif units == 'knots' or units == 'kts':
+            wsp = wsp * 1.15077945
+        elif units == 'mph':
+            wsp = wsp
+        else:
+            raise ValueError("Wind speed units must be 'm/s', 'kts', or 'mph'.")
+            
+        # Categorizes wind speed
+        category = np.vectorize(lambda x: 'Category 5' if x >= 157.0 
+                                else ('Category 4' if np.logical_and(x < 157.0, x > 129.0) 
+                                      else ('Category 3' if np.logical_and(x > 110.0, x <= 129.0) 
+                                            else ('Category 2' if np.logical_and(x > 95.0, x <= 110.0) 
+                                                  else ('Category 1' if np.logical_and(x >= 74.0, x <= 95.0) 
+                                                        else ('Tropical Storm' if np.logical_and(x > 38.0, x < 74.0) 
+                                                              else 'Tropical Depression'))))))(wsp)
+        
+        return category
+        
+
+    def sshs_mslp(self, slp, unit):
+        """
+        Takes minimum sea level pressure, converts to pascals, returns corresponding category from SSHS.
+        (According to Klotzbach et. al., 2020, modified for TS and TD designation using Kantha, 2006)
+        Parameters:
+        -------------
+        wsp : ndarray or variable
+        units : str
+        """
+        pascals = ['pascal', 'Pascal', 'pa', 'Pa', 'pascals', 'Pascals']
+        hPa = ['mb', 'millibars', 'hPa', 'hectopascals', 'Hectopascals']
+
+        if unit in pascals:
+            slp = slp/100
+
+        category = np.vectorize(lambda x: 'Category 5' if x <= 925.0 
+                                else ('Category 4' if np.logical_and(x <= 946.0, x > 925.0) 
+                                      else ('Category 3' if np.logical_and(x <= 960.0, x > 946.0) 
+                                            else ('Category 2' if np.logical_and(x <= 975.0, x > 960.0) 
+                                                  else ('Category 1' if np.logical_and(x <= 990.0, x > 975.0) 
+                                                        else ('Tropical Storm' if np.logical_and(x < 1000.0, x > 990.0) 
+                                                              else 'Tropical Depression'))))))(slp)
+        return category
+
+    def sshs_color(self):
+        """
+        Takes category on the Saffir Simpson Hurricane Scale, spits out correct color for plotting.
+        """
+        color = np.vectorize(lambda x: '#5EBAFF' if x == 'Tropical Depression'
+                                    else ('#00FAF4' if x == 'Tropical Storm'
+                                          else ('#FFF795' if x == 'Category 1' 
+                                                else ('#FFD821' if x == 'Category 2' 
+                                                      else ('#FF8F20' if x == 'Category 3' 
+                                                            else ('#FF6060' if x == 'Category 4' 
+                                                                  else '#C464D9' if x == 'Category 5' else ''))))))(self.category)
+        return color
     
 def geog_features(ax, basin='north atlantic zoomed', resolution='10m'):
     lons, lats = basin_bboxes(basin)
@@ -107,38 +151,6 @@ def geog_features(ax, basin='north atlantic zoomed', resolution='10m'):
     ax.add_feature(cfeature.STATES.with_scale(resolution), linewidth=0.5, facecolor='#EBEBEB', edgecolor='#616161', zorder=2)
     ax.add_feature(cfeature.LAKES.with_scale(resolution), linewidth=0.5, facecolor='#e4f1fa', edgecolor='#616161', zorder=2)
     ax.add_feature(cfeature.OCEAN.with_scale(resolution), facecolor='#e4f1fa', edgecolor='face', zorder=1)
-
-def nonlinear_colorbar(var_name=None):
-    if var_name == 'PRECIP':
-        colors = [
-                '#ffffff',  # 0 inches
-                "#04e9e7",  # 0.01 - 0.10 inches
-                "#019ff4",  # 0.10 - 0.25 inches
-                "#0300f4",  # 0.25 - 0.50 inches
-                "#02fd02",  # 0.50 - 0.75 inches
-                "#01c501",  # 0.75 - 1.00 inches
-                "#008e00",  # 1.00 - 1.50 inches
-                "#fdf802",  # 1.50 - 2.00 inches
-                "#e5bc00",  # 2.00 - 2.50 inches
-                "#fd9500",  # 2.50 - 3.00 inches
-                "#fd0000",  # 3.00 - 4.00 inches
-                "#d40000",  # 4.00 - 5.00 inches
-                "#bc0000",  # 5.00 - 6.00 inches
-                "#f800fd",  # 6.00 - 8.00 inches
-                "#9854c6",  # 8.00 - 10.00 inches
-                "#fdfdfd"   # 10.00+
-            ]
-        levels = [0.1, 0.25, 0.50, 0.75, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0,
-              6.0, 8.0, 10.]
-            
-        return cmap
-    else:
-        raise ValueError('fix me.')
-        
-    cmap = mcolors.ListedColormap(colors, var_name)    
-    norm = mcolors.BoundaryNorm(levels, len(levels))
-    
-    return cmap
 
 def plot_sshws_segments(ax, df, figtitle=None):
     
@@ -238,10 +250,11 @@ def plot_sshws_points(ax, df, figtitle=None, j=None, label_tracks=False):
     l.set_zorder(1001)
     plt.title(figtitle)
     #plt.show()
-    
-
 
 def basin_bboxes(basin_name):
+    """
+    Creates predefined bounding boxes if supplied correct name.
+    """
     if basin_name == 'north atlantic':
         west_coord = -105.0+360
         east_coord = -5.0+360
@@ -258,10 +271,10 @@ def basin_bboxes(basin_name):
         north_coord = 32.5
         south_coord = 20.0
     elif basin_name == 'south florida':
-        west_coord = -83.0+360
-        east_coord = -80.0+360
-        north_coord = 29.0
-        south_coord = 24.5
+        west_coord = -84.0+360
+        east_coord = -79.0+360
+        north_coord = 30.0
+        south_coord = 24.0
     elif basin_name == 'south atlantic':
         west_coord = -105.0+360
         east_coord = -5.0+360
@@ -307,6 +320,8 @@ def basin_bboxes(basin_name):
         east_coord = -60.0+360
         north_coord = 48.0
         south_coord = 20.0
+    else:
+        raise ValueError("Supplied name not in given list.")
     
     lons = (west_coord, east_coord)
     lats = (south_coord, north_coord)
