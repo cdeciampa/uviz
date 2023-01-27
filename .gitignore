@@ -1,23 +1,19 @@
 # ibtracs and other large files
 *ibtracs.since1980.list.v04r00.csv
 *IBTrACS.ALL.v04r00.nc
-*datashader_mpas.ipynb
-*datashader_hires_sandbox.ipynb
-*datashader_lowres.ipynb
-*track_1279_wrangling.ipynb
+
 *figs/flut_gif/*.png
-*prototype_sims.ipynb
-*mpas_vorticity.ipynb
-*parent_sims_testing.ipynb
 src/uviz.egg-info
 #poetry.lock
 #=4.2.0
 *dask_dx_dy*
 *dxdy*
 **/*.ipynb
-!*sample_notebook.ipynb
+!*sample_notebook*.ipynb
 !*tempest_*.ipynb
 !*track_1279_wrangling.ipynb
+*core*
+*.svg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

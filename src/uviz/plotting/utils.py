@@ -1,4 +1,8 @@
+from matplotlib.collections import LineCollection
+import matplotlib.lines as mlines
 import matplotlib.colors as mcolors
+import matplotlib.patheffects as pe
+
 import numpy as np
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -14,8 +18,8 @@ class CustomColorbars():
     def get_cmap(self, target_cmap):
         
         if target_cmap == 'FLUT':
-            btemps = np.array([-110, -92.1, -92, -80, -70, -60, -50, -42, -30, -29.9, -20, -10, 0, 10, 20, 30, 40, 57])
-            levels = np.array(list(map(self.T_to_FLUT, btemps)))
+            brightness_temps = np.array([-110, -92.1, -92, -80, -70, -60, -50, -42, -30, -29.9, -20, -10, 0, 10, 20, 30, 40, 57])
+            levels = np.array(list(map(self.T_to_FLUT, brightness_temps)))
             fracs = levels-self.T_to_FLUT(-110, 'C')
             fracs = fracs/fracs[-1]
 
@@ -50,6 +54,8 @@ class CustomColorbars():
             levels = [0.0, 0.01, 0.10, 0.25, 0.50, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0]
             #levels = [0.01, 0.10, 0.25, 0.50, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0]
             norm = mcolors.BoundaryNorm(boundaries=levels, ncolors=len(levels))
+        else:
+            raise ValueError("Must choose either 'FLUT' or 'nws_precip' colormap.")
         
         return colormap, levels, norm
 
