@@ -1,3 +1,5 @@
+from haversine import inverse_haversine, Direction, Unit
+
 from matplotlib.collections import LineCollection
 import matplotlib.lines as mlines
 import matplotlib.colors as mcolors
@@ -261,6 +263,14 @@ def basin_bboxes(basin_name):
     """
     Creates predefined bounding boxes if supplied correct name.
     """
+    basin_name = basin_name.lower()
+    basins = ['north atlantic', 'north atlantic zoomed', 'florida', 'south florida', 'miami', 
+              'south atlantic', 'east pacific', 'west pacific', 'north indian', 'south indian', 
+              'australia', 'south pacific', 'conus', 'east conus']
+    
+    if basin_name not in basins:
+        raise ValueError(f'{basin_name} not in list of basins. Choose from {basins}'.)
+        
     if basin_name == 'north atlantic':
         west_coord = -105.0+360
         east_coord = -5.0+360
@@ -281,6 +291,12 @@ def basin_bboxes(basin_name):
         east_coord = -79.0+360
         north_coord = 30.0
         south_coord = 24.0
+    elif basin_name = 'miami':
+        miami_coords = (25.775163, -80.208615)
+        west_coord = inverse_haversine(miami_coords, 100, Direction.WEST, unit=Unit.KILOMETERS)[1]+360
+        east_coord = inverse_haversine(miami_coords, 100, Direction.EAST, unit=Unit.KILOMETERS)[1]+360
+        north_coord = inverse_haversine(miami_coords, 100, Direction.NORTH, unit=Unit.KILOMETERS)[0]
+        south_coord = inverse_haversine(miami_coords, 100, Direction.SOUTH, unit=Unit.KILOMETERS)[0]
     elif basin_name == 'south atlantic':
         west_coord = -105.0+360
         east_coord = -5.0+360

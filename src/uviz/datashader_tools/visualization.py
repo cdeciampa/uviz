@@ -353,6 +353,8 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
     coastline_kw = kwargs.get('coastline_kw', {})
     out_file_kw = kwargs.get('out_file', {})
     
+    #isinstance(test_dict, dict)
+    
     if save_fig == True and not out_file_kw:
         raise ValueError('Must supply kwargs to out_file_kw if you wish to output your figure.')
     elif out_file_kw and 'filename' not in out_file_kw.keys():
