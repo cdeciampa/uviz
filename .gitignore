@@ -8,10 +8,10 @@ src/uviz.egg-info
 #=4.2.0
 *dask_dx_dy*
 *dxdy*
-**/*.ipynb
+#**/*.ipynb
 !*sample_notebook*.ipynb
-!*tempest_*.ipynb
-!*track_1279_wrangling.ipynb
+#!*tempest_*.ipynb
+#!*track_1279_wrangling.ipynb
 *core*
 *.svg
 
