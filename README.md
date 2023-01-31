@@ -1,5 +1,5 @@
 # UVIZ
-Tools for **U**nstructured climate model grid **VI**suali**Z**ation. Currently only supports the quasi-uniform, cubed-sphere grid of the Community Atmosphere Model and the triangular secondary mesh of the Model for Prediction Across Scales.
+Tools for **U**nstructured climate model grid **VI**suali**Z**ation. Currently only supports the quasi-uniform, cubed-sphere grid ("ne30") of the Community Atmosphere Model and the quasi-hexagonal primary mesh of the Model for Prediction Across Scales.
 
 ![storm_0236_FLUT_resized](https://user-images.githubusercontent.com/66640080/210186304-5bfeeebd-4232-403b-99fb-aab2b7c741b0.gif)
 
@@ -15,5 +15,6 @@ Zarzycki, C. M., Ullrich, P. A., & Reed, K. A. (2021). Metrics for Evaluating Tr
 Project Raijin, entitled "Collaborative Research: EarthCube Capabilities: Raijin: Community Geoscience Analysis Tools for Unstructured Mesh Data", was awarded by NSF 21-515 EarthCube (Award Number (FAIN): 2126458) on 08/19/2021. The award period of performance has a start date of 09/01/2021 and end date of 08/31/2024.
 * [Project Raijin](https://raijin.ucar.edu)
 * [uxarray](https://github.com/UXARRAY/uxarray)
+* [Polymesh](https://github.com/NCAR/geocat-scratch/tree/main/polymesh)
 * [Datashader](https://datashader.org)
 * [GeoCAT](https://geocat.ucar.edu)
