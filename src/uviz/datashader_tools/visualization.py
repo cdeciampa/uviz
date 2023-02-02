@@ -15,6 +15,10 @@ from holoviews import opts
 from holoviews.operation.datashader import rasterize as hds_rasterize
 
 import geoviews.feature as gf
+import logging
+
+# Hides inconsequential warning about renaming x and y dims to x and y
+logging.getLogger("UserWarning").setLevel(logging.CRITICAL)
 
 class Polymesh():
     def __init__(self, mesh_ds, data_ds=None, model='mpas', projection=ccrs.PlateCarree()):
@@ -363,13 +367,13 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
     if plot_bbox != None:
         lon_range, lat_range = plot_bbox
         x_range, y_range, _ = proj.transform_points(ccrs.PlateCarree(), np.array(lon_range), np.array(lat_range)).T
-        lon_range = tuple(x_range)
-        lat_range = tuple(y_range)
+        datashader_kw['x_range'] = tuple(x_range)
+        datashader_kw['y_range'] = tuple(y_range)
     
     if raster == True:
-        hv_polys = hv.Polygons(polymesh_df, vdims=['faces']).opts(color='faces') * gf.coastline(projection=proj).opts(**coastline_kw)
+        hv_polys = hv.Polygons(polymesh_df, vdims=['faces']).opts(color='faces') 
         rasterized = hds_rasterize(hv_polys, **datashader_kw) 
-        out_plot = rasterized.opts(**holoviews_kw)
+        out_plot = rasterized.opts(**holoviews_kw) * gf.coastline(projection=proj).opts(**coastline_kw)
         if save_fig == True:
             print('Exporting raster image...')
             hv.save(out_plot, center=False, **out_file_kw)
