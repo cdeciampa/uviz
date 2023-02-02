@@ -1,7 +1,7 @@
 # UVIZ
 Tools for **U**nstructured climate model grid **VI**suali**Z**ation. Currently only supports the quasi-uniform, cubed-sphere grid ("ne30") of the Community Atmosphere Model and the quasi-hexagonal primary mesh of the Model for Prediction Across Scales.
 
-![storm_0236_FLUT_resized](https://user-images.githubusercontent.com/66640080/210186304-5bfeeebd-4232-403b-99fb-aab2b7c741b0.gif)
+![FLUT_200-2](https://user-images.githubusercontent.com/66640080/216414451-ed5f04c1-226d-4176-b639-07118df08869.gif)
 
 ## Installation
 Coming soon.
