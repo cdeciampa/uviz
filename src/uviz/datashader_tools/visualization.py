@@ -367,8 +367,12 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
     if plot_bbox != None:
         lon_range, lat_range = plot_bbox
         x_range, y_range, _ = proj.transform_points(ccrs.PlateCarree(), np.array(lon_range), np.array(lat_range)).T
-        datashader_kw['x_range'] = tuple(x_range)
-        datashader_kw['y_range'] = tuple(y_range)
+        if raster == True:
+            datashader_kw['x_range'] = tuple(x_range)
+            datashader_kw['y_range'] = tuple(y_range)
+        elif raster == False:
+            holoviews_kw['xlim'] = tuple(x_range)
+            holoviews_kw['ylim'] = tuple(y_range)
     
     if raster == True:
         hv_polys = hv.Polygons(polymesh_df, vdims=['faces']).opts(color='faces') 
