@@ -269,7 +269,7 @@ def basin_bboxes(basin_name):
               'australia', 'south pacific', 'conus', 'east conus']
     
     if basin_name not in basins:
-        raise ValueError(f'{basin_name} not in list of basins. Choose from {basins}'.)
+        raise ValueError(f'{basin_name} not in list of basins. Choose from {basins}.')
         
     if basin_name == 'north atlantic':
         west_coord = -105.0+360
@@ -291,7 +291,7 @@ def basin_bboxes(basin_name):
         east_coord = -79.0+360
         north_coord = 30.0
         south_coord = 24.0
-    elif basin_name = 'miami':
+    elif basin_name == 'miami':
         miami_coords = (25.775163, -80.208615)
         west_coord = inverse_haversine(miami_coords, 100, Direction.WEST, unit=Unit.KILOMETERS)[1]+360
         east_coord = inverse_haversine(miami_coords, 100, Direction.EAST, unit=Unit.KILOMETERS)[1]+360
