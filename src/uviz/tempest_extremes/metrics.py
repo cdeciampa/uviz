@@ -40,8 +40,8 @@ class TrackMetrics(TempestExtremes, IBTrACS):
 
         Parameters
         --------------
-        tempest_df   :: TempestExtremes track dataframe
-        unclean_ibtracs :: unclean IBTrACS dataframe from IBTrACS.unclean
+        tempest_df :: TempestExtremes track dataframe
+        ib_df      :: IBTrACS dataframe from IBTrACS.unclean or IBTrACS.clean
         """
         
         # Merges TempestExtremes and IBTrACS dataframes on datetime columns
