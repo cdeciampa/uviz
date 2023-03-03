@@ -1,11 +1,9 @@
+import numpy as np
+
 from haversine import inverse_haversine, Direction, Unit
 
-from matplotlib.collections import LineCollection
-import matplotlib.lines as mlines
+import bokeh.palettes
 import matplotlib.colors as mcolors
-import matplotlib.patheffects as pe
-
-import numpy as np
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
@@ -20,13 +18,17 @@ class CustomColorbars():
     def get_cmap(self, target_cmap):
         
         if target_cmap == 'FLUT':
-            brightness_temps = np.array([-110, -92.1, -92, -80, -70, -60, -50, -42, -30, -29.9, -20, -10, 0, 10, 20, 30, 40, 57])
+            brightness_temps = np.array([-110, -92.1, -92, -80, -70, -60, -50, -42, 
+                                         -30, -29.9, -20, -10, 0, 10, 20, 30, 40, 57])
             levels = np.array(list(map(self.T_to_FLUT, brightness_temps)))
             fracs = levels-self.T_to_FLUT(-110, 'C')
             fracs = fracs/fracs[-1]
 
-            flut_colors = ['#ffffff', '#ffffff', '#e6e6e6', '#000000', '#ff1a00', '#e6ff01', '#00e30e', '#010073', '#00ffff', 
-                           '#bebebe', '#acacac', '#999999', '#7e7e7e', '#6c6c6c', '#525252', '#404040', '#262626', '#070707']
+            flut_colors = ['#ffffff', '#ffffff', '#e6e6e6', '#000000', 
+                           '#ff1a00', '#e6ff01', '#00e30e', '#010073', 
+                           '#00ffff', '#bebebe', '#acacac', '#999999', 
+                           '#7e7e7e', '#6c6c6c', '#525252', '#404040', 
+                           '#262626', '#070707']
             colormap = mcolors.LinearSegmentedColormap.from_list('FLUT CIMSS', list(zip(fracs, flut_colors)), N=1200)
             norm = mcolors.Normalize(vmin=levels[0], vmax=levels[-1])
         
@@ -53,27 +55,66 @@ class CustomColorbars():
                 "#c2c2c2"  # 30.00 - 40.00 inch  gray
                 ]
             colormap = mcolors.ListedColormap(nws_precip_colors, 'nws_precip')
-            levels = [0.0, 0.01, 0.10, 0.25, 0.50, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0]
-            #levels = [0.01, 0.10, 0.25, 0.50, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0]
+            levels = [0.0, 0.01, 0.10, 0.25, 0.50, 1.0, 1.5, 2.0, 3.0, 
+                      4.0, 5.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0]
+            #levels = [0.01, 0.10, 0.25, 0.50, 1.0, 1.5, 2.0, 3.0, 
+            #4.0, 5.0, 6.0, 8.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0]
             norm = mcolors.BoundaryNorm(boundaries=levels, ncolors=len(levels))
+
         else:
             raise ValueError("Must choose either 'FLUT' or 'nws_precip' colormap.")
         
         return colormap, levels, norm
 
     def T_to_FLUT(self, T, unit='C'):
+        """
+        Converts brightness temperature to outgoing longwave 
+        radiation flux using the Stefan-Boltzmann Law. 
+        Used to make pseudo-enhanced satellite plots.
+        
+        Parameters:
+        ----------------
+        T    :: float, temperature
+        unit :: str (optional), unit of temperature. Default is 'C'.
+        """
+        
         if unit == 'C':
             T += 273.15
         sigma = 5.6693E-8
         olr = sigma*(T**4)
 
         return olr
+    
+def diverging_colormap(cmin, cmid, cmax, palette, ncolors=256):
+    """
+    Function to create a diverging colormap to use with Holoviews (which is not natively supported).
+    Returns divergent colormap (one where the normalization above the midpoint != normalization 
+    below the midpoint).
+    
+    Parameters:
+    ----------------
+    cmin     ::  float, int - minimum to clip plotting data (akin to mpl's vmin) for normalization
+    cmid     ::  float, int - midpoint to begin divergence of colors
+    cmax     ::  float, int - maximum to clip plotting data (akin to mpl's vmax) for normalization
+    palette  ::  bokeh.palettes, list - original colormap (or list of colors) for diverging
+    
+    ncolors  :: optional, int (default=256), must match number of colors in the supplied palette.
+    """
+
+    diverge_point_norm = (cmid - cmin) / (cmax - cmin)
+    palette_cutoff = round(diverge_point_norm * ncolors)
+    palette_split = palette[palette_cutoff:]
+    diverge_cmap = bokeh.palettes.diverging_palette(palette[:palette_cutoff], palette_split[::-1], n=ncolors, midpoint=diverge_point_norm)
+    
+    return diverge_cmap
 
 class SaffirSimpson():
     def __init__(self, var, units):
         self.units = units
+        self.var = var
         wsp_units = ['m/s', 'knots', 'kts', 'mph']
-        mslp_units = ['pascal', 'Pascal', 'pa', 'Pa', 'pascals', 'Pascals', 'mb', 'millibars', 'hPa', 'hectopascals', 'Hectopascals']
+        mslp_units = ['pascal', 'Pascal', 'pa', 'Pa', 'pascals', 'Pascals', 
+                      'mb', 'millibars', 'hPa', 'hectopascals', 'Hectopascals']
         
         if self.units in wsp_units:
             self.category = self.sshs_wsp(self.var, self.units)
@@ -105,11 +146,11 @@ class SaffirSimpson():
         # Categorizes wind speed
         category = np.vectorize(lambda x: 'Category 5' if x >= 157.0 
                                 else ('Category 4' if np.logical_and(x < 157.0, x > 129.0) 
-                                      else ('Category 3' if np.logical_and(x > 110.0, x <= 129.0) 
-                                            else ('Category 2' if np.logical_and(x > 95.0, x <= 110.0) 
-                                                  else ('Category 1' if np.logical_and(x >= 74.0, x <= 95.0) 
-                                                        else ('Tropical Storm' if np.logical_and(x > 38.0, x < 74.0) 
-                                                              else 'Tropical Depression'))))))(wsp)
+                                else ('Category 3' if np.logical_and(x > 110.0, x <= 129.0) 
+                                else ('Category 2' if np.logical_and(x > 95.0, x <= 110.0) 
+                                else ('Category 1' if np.logical_and(x >= 74.0, x <= 95.0) 
+                                else ('Tropical Storm' if np.logical_and(x > 38.0, x < 74.0) 
+                                else 'Tropical Depression'))))))(wsp)
         
         return category
         
@@ -131,11 +172,11 @@ class SaffirSimpson():
 
         category = np.vectorize(lambda x: 'Category 5' if x <= 925.0 
                                 else ('Category 4' if np.logical_and(x <= 946.0, x > 925.0) 
-                                      else ('Category 3' if np.logical_and(x <= 960.0, x > 946.0) 
-                                            else ('Category 2' if np.logical_and(x <= 975.0, x > 960.0) 
-                                                  else ('Category 1' if np.logical_and(x <= 990.0, x > 975.0) 
-                                                        else ('Tropical Storm' if np.logical_and(x < 1000.0, x > 990.0) 
-                                                              else 'Tropical Depression'))))))(slp)
+                                else ('Category 3' if np.logical_and(x <= 960.0, x > 946.0) 
+                                else ('Category 2' if np.logical_and(x <= 975.0, x > 960.0) 
+                                else ('Category 1' if np.logical_and(x <= 990.0, x > 975.0) 
+                                else ('Tropical Storm' if np.logical_and(x < 1000.0, x > 990.0) 
+                                else 'Tropical Depression'))))))(slp)
         return category
 
     def sshs_color(self):
@@ -143,168 +184,74 @@ class SaffirSimpson():
         Takes category on the Saffir Simpson Hurricane Scale, spits out correct color for plotting.
         """
         color = np.vectorize(lambda x: '#5EBAFF' if x == 'Tropical Depression'
-                                    else ('#00FAF4' if x == 'Tropical Storm'
-                                          else ('#FFF795' if x == 'Category 1' 
-                                                else ('#FFD821' if x == 'Category 2' 
-                                                      else ('#FF8F20' if x == 'Category 3' 
-                                                            else ('#FF6060' if x == 'Category 4' 
-                                                                  else '#C464D9' if x == 'Category 5' else ''))))))(self.category)
+                             else ('#00FAF4' if x == 'Tropical Storm'
+                            else ('#FFF795' if x == 'Category 1' 
+                            else ('#FFD821' if x == 'Category 2' 
+                            else ('#FF8F20' if x == 'Category 3' 
+                            else ('#FF6060' if x == 'Category 4' 
+                            else '#C464D9' if x == 'Category 5' 
+                            else ''))))))(self.category)
         return color
-    
-def geog_features(ax, basin='north atlantic zoomed', resolution='10m'):
-    lons, lats = basin_bboxes(basin)
-    ax.set_extent([lons[0], lons[1], lats[0], lats[1]], crs=ccrs.PlateCarree())
-    ax.add_feature(cfeature.COASTLINE.with_scale(resolution), linewidth=0.5, edgecolor='#323232', zorder=3)
-    #ax.add_feature(cfeature.BORDERS.with_scale(resolution), linewidth=0.5, edgecolor='#323232', zorder=3)
-    ax.add_feature(cfeature.STATES.with_scale(resolution), linewidth=0.5, facecolor='#EBEBEB', edgecolor='#616161', zorder=2)
-    ax.add_feature(cfeature.LAKES.with_scale(resolution), linewidth=0.5, facecolor='#e4f1fa', edgecolor='#616161', zorder=2)
-    ax.add_feature(cfeature.OCEAN.with_scale(resolution), facecolor='#e4f1fa', edgecolor='face', zorder=1)
 
-def plot_sshws_segments(ax, df, figtitle=None):
-    
-    proj = ccrs.PlateCarree()
-    for track, track_df in df.groupby('tempest_ID'):
-    
-        lons = track_df['lon'].values
-        lats = track_df['lat'].values
-        wsps = track_df['wsp'].values
-        sshws_cmap = [sshws_color(x, units='m/s') for x in wsps]
-
-        points = np.array([lons, lats]).T.reshape(-1, 1, 2)
-        segments = np.concatenate([points[:-1], points[1:]], axis=1)
-
-        lc = LineCollection(segments, colors=sshws_cmap, zorder=10, transform=proj, 
-                            lw=1.25, path_effects=[pe.Stroke(linewidth=2.0, foreground='#848484'), pe.Normal()])
-        ax.add_collection(lc)
-    
-    lw = 2.0
-    lw_e = 3.0
-    td = mlines.Line2D([], [], ls='-', lw=lw, label='Tropical Depression', color=sshws_color(35, 'mph'),
-                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
-    ts = mlines.Line2D([], [], ls='-', lw=lw, label='Tropical Storm', color=sshws_color(50, 'mph'), 
-                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
-    c1 = mlines.Line2D([], [], ls='-', lw=lw, label='Category 1', color=sshws_color(75, 'mph'), 
-                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
-    c2 = mlines.Line2D([], [], ls='-', lw=lw, label='Category 2', color=sshws_color(100, 'mph'), 
-                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
-    c3 = mlines.Line2D([], [], ls='-', lw=lw, label='Category 3', color=sshws_color(115, 'mph'), 
-                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
-    c4 = mlines.Line2D([], [], ls='-', lw=lw, label='Category 4', color=sshws_color(135, 'mph'), 
-                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
-    c5 = mlines.Line2D([], [], ls='-', lw=lw, label='Category 5', color=sshws_color(160, 'mph'), 
-                       path_effects=[pe.Stroke(linewidth=lw_e, foreground='#848484'), pe.Normal()])
-
-    l = ax.legend(handles = [c5, c4, c3, c2, c1, ts, td], loc='upper right', fontsize=14, shadow=True)
-    l.set_zorder(1001)
-    plt.title(figtitle, fontsize=20)
-    plt.show()
-    
-def plot_sshws_points(ax, df, figtitle=None, j=None, label_tracks=False):
-    
-    proj = ccrs.PlateCarree()
-    for i, (track_ID, track_df) in enumerate(df.groupby('tempest_ID')):
-        track_df = track_df.sort_values(by=['tempest_ID', 'time']).reset_index(drop=True)
-        lons = track_df['lon'].values
-        lats = track_df['lat'].values
-        wsps = track_df['wsp'].values
-        sshws_cmap = [sshws_color(x, units='m/s') for x in wsps]
-        
-        if j == 0:
-            label_pos = [[lons[8]+1.25, lats[8]+0.2], [lons[13]+1.25, lats[13]+0.2], [lons[10]-1.25, lats[10]-0.2]]
-        elif j == 1:
-            label_pos = [[lons[13]-1.25, lats[13]+0.2], [lons[6]-1.25, lats[6]+0.2], [lons[8]-1.25, lats[8]-0.2], [lons[3]+1.25, lats[3]+0.2]]
-        elif j == 2:
-            label_pos = [[lons[13]-1.25, lats[13]-0.2], [lons[11]+1.25, lats[11]+0.2], [lons[-9]-1.25, lats[-9]-0.2], [lons[8]+1.25, lats[8]+0.2]]
-        elif j == 3:
-            label_pos = []
-        elif j == 4:
-            label_pos = [[lons[14]-1.25, lats[14]+0.2], [lons[17]+1.25, lats[17]+0.35], [lons[-10]-1.1, lats[-10]-0.35]]
-        elif j == 5:
-            label_pos = [[lons[11]+1.25, lats[11]+0.2]]
-        elif j == 6:
-            label_pos = []
-        elif j == 7:
-            label_pos = [[lons[4]+1.25, lats[4]+0.2], [lons[0]-1.25, lats[0]-0.2]]
-        elif j == 8:
-            label_pos = [[lons[10]-1.25, lats[10]+0.2], [lons[14]-1.25, lats[14]-0.2]]
-
-        points = np.array([lons, lats]).T.reshape(-1, 1, 2)
-        segments = np.concatenate([points[:-1], points[1:]], axis=1)
-
-        lc = LineCollection(segments, colors='k', zorder=9, transform=proj, lw=0.5, ls='--')
-        ax.add_collection(lc)
-        ax.scatter(lons, lats, c=sshws_cmap, zorder=10, edgecolors='k', lw=0.35, s=30)
-        # This labels individual tracks within model runs
-        if label_tracks == True:
-            ax.text(label_pos[i][0], label_pos[i][1], track_ID, transform=proj, fontsize=7.5, 
-                    path_effects=[pe.Stroke(linewidth=1.75, foreground='w'), pe.Normal()], clip_on=True, ha='center', va='center')
-    
-    # Marker properties
-    mew = 0.25     # marker edge width
-    mec = 'k'      # marker edge color
-    ms = 6         # marker size
-    #mfc           # marker face color
-    
-    td = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Tropical Depression', mfc=sshws_color(35, 'mph'), color='k', lw=0.5, ls='--')
-    ts = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Tropical Storm', mfc=sshws_color(50, 'mph'), color='k', lw=0.5, ls='--')
-    c1 = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Category 1', mfc=sshws_color(75, 'mph'), color='k', lw=0.5, ls='--')
-    c2 = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Category 2', mfc=sshws_color(100, 'mph'), color='k', lw=0.5, ls='--')
-    c3 = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Category 3', mfc=sshws_color(115, 'mph'), color='k', lw=0.5, ls='--')
-    c4 = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Category 4', mfc=sshws_color(135, 'mph'), color='k', lw=0.5, ls='--')
-    c5 = mlines.Line2D([], [], marker='o', ms=ms, mew=mew, mec=mec, label='Category 5', mfc=sshws_color(160, 'mph'), color='k', lw=0.5, ls='--')
-
-    l = ax.legend(handles = [c5, c4, c3, c2, c1, ts, td], loc='upper right', 
-                  fontsize=10, shadow=False)
-    l.set_zorder(1001)
-    plt.title(figtitle)
-    #plt.show()
-
-def basin_bboxes(basin_name):
+def basin_bboxes(basin_name='', lon_range=360, **kwargs):
     """
     Creates predefined bounding boxes if supplied correct name.
+    
+    Parameters:
+    -------------------
+    basin_name :: str, target basin name.
+    lon_range  :: int (optional), defines maximum range of longitude. 
+                        Options are 360 or 180, default is 360.
+    
+    Optional kwargs:
+    -------------------
+    custom_basin :: dict, options include {'center_coords', 'distance', 'unit'}, or
+                            {'west_coord', 'east_coord', 'north_coord', 'south_coord'}.
     """
+    
     basin_name = basin_name.lower()
     basins = ['north atlantic', 'north atlantic zoomed', 'florida', 'south florida', 'miami', 
               'south atlantic', 'east pacific', 'west pacific', 'north indian', 'south indian', 
               'australia', 'south pacific', 'conus', 'east conus']
     
-    if basin_name not in basins:
-        raise ValueError(f'{basin_name} not in list of basins. Choose from {basins}.')
+    custom_basin = kwargs.get('custom_basin', {})
+    
+    if basin_name not in basins and not custom_basin:
+        err = f"'{basin_name}' not in list of basins. Choose from {basins} or supply `custom_basin` dict."
+        raise ValueError(err)
         
+    if basin_name == 'miami':
+        custom_basin['center_coords'] = (25.775163, -80.208615)
+        
+    # Option 1: supply a name for one of the predetermined bounding boxes.
     if basin_name == 'north atlantic':
-        west_coord = -105.0+360
-        east_coord = -5.0+360
+        west_coord = -105.0
+        east_coord = -5.0
         north_coord = 70.0
         south_coord = 0.0
     elif basin_name == 'north atlantic zoomed':
-        west_coord = -100.0+360
-        east_coord = -15.0+360
+        west_coord = -100.0
+        east_coord = -15.0
         north_coord = 50.0
         south_coord = 7.5
     elif basin_name == 'florida':
-        west_coord = -90.0+360
-        east_coord = -72.5+360
+        west_coord = -90.0
+        east_coord = -72.5
         north_coord = 32.5
         south_coord = 20.0
     elif basin_name == 'south florida':
-        west_coord = -84.0+360
-        east_coord = -79.0+360
+        west_coord = -84.0
+        east_coord = -79.0
         north_coord = 30.0
         south_coord = 24.0
-    elif basin_name == 'miami':
-        miami_coords = (25.775163, -80.208615)
-        west_coord = inverse_haversine(miami_coords, 100, Direction.WEST, unit=Unit.KILOMETERS)[1]+360
-        east_coord = inverse_haversine(miami_coords, 100, Direction.EAST, unit=Unit.KILOMETERS)[1]+360
-        north_coord = inverse_haversine(miami_coords, 100, Direction.NORTH, unit=Unit.KILOMETERS)[0]
-        south_coord = inverse_haversine(miami_coords, 100, Direction.SOUTH, unit=Unit.KILOMETERS)[0]
     elif basin_name == 'south atlantic':
-        west_coord = -105.0+360
-        east_coord = -5.0+360
+        west_coord = -105.0
+        east_coord = -5.0
         north_coord = 65.0
         south_coord = 0.0
     elif basin_name == 'east pacific':
-        west_coord = -180.0+360
-        east_coord = -80.0+360
+        west_coord = -180.0
+        east_coord = -80.0
         north_coord = 65.0
         south_coord = 0.0    
     elif basin_name == 'west pacific':
@@ -329,22 +276,65 @@ def basin_bboxes(basin_name):
         south_coord = -60.0        
     elif basin_name == 'south pacific':
         west_coord = 140.0
-        east_coord = -120.0+360
+        east_coord = -120.0#+360
         north_coord = 0.0
         south_coord = -65.0        
     elif basin_name == 'conus':
-        west_coord = -130.0+360
-        east_coord = -65.0+360
+        west_coord = -130.0
+        east_coord = -65.0
         north_coord = 50.0
         south_coord = 20.0        
     elif basin_name == 'east conus':
-        west_coord = -105.0+360
-        east_coord = -60.0+360
+        west_coord = -105.0
+        east_coord = -60.0
         north_coord = 48.0
         south_coord = 20.0
+    elif custom_basin:
+        set1 = {'center_coords', 'distance', 'unit'}
+        set2 = {'west_coord', 'east_coord', 'north_coord', 'south_coord'}
+        
+        # Option 2: supply a center point and a distance around it to return a bounding box.
+        if set1 <= custom_basin.keys():
+            center_pt = custom_basin['center_coords']
+            dist = custom_basin['distance']
+            acceptable_units = [item.value for item in Unit]
+            
+            if custom_basin['unit'] not in acceptable_units:
+                raise ValueError(f"Acceptable units are: {acceptable_units}.")
+            else:
+                unit = custom_basin['unit']
+                
+            west_coord = inverse_haversine(center_pt, dist, Direction.WEST, unit=unit)[1]
+            east_coord = inverse_haversine(center_pt, dist, Direction.EAST, unit=unit)[1]
+            north_coord = inverse_haversine(center_pt, dist, Direction.NORTH, unit=unit)[0]
+            south_coord = inverse_haversine(center_pt, dist, Direction.SOUTH, unit=unit)[0]
+            
+        # Option 2: supply a user-defined bounding box.
+        elif set2 <= custom_basin.keys():
+            west_coord = custom_basin['west_coord']
+            east_coord = custom_basin['east_coord']
+            north_coord = custom_basin['north_coord']
+            south_coord = custom_basin['south_coord']
+        
+        # There are no other custom options.
+        else:
+            err = f"Must supply either all of {str(set1)} or all of {str(set2)} in `custom_basin` keys."
+            raise KeyError(err)
+
+    # There are no other options.
     else:
         raise ValueError("Supplied name not in given list.")
     
+    # Converts longitude from [-180, 180] to [0, 360].
+    if lon_range == 360:
+        west_coord = np.mod(west_coord, 360)
+        east_coord = np.mod(east_coord, 360)
+        
+    # Currently doesn't support radians.
+    elif lon_range != 360 and lon_range != 180:
+        raise ValueError("Acceptable values for `lon_range` are 180 or 360.")
+        
+    # Packs longitude range and latitude range into lists and returns them.
     lons = (west_coord, east_coord)
     lats = (south_coord, north_coord)
     
