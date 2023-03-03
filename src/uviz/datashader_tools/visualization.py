@@ -114,7 +114,7 @@ class Polymesh():
     def ensure_ccw_polygons(self, poly_list):
         """
         Function to ensure polygons are in CCW winding order for proper plotting in Datashader.
-        Parameters:
+        Parameters
         --------------
         poly_list : ndarray of polygons
         """
@@ -130,8 +130,10 @@ class Polymesh():
         vert_idx[vert_idx == poly_list.shape[1]-1] = -1
 
         # Finds edges on either side of target vertex
-        edges1 = np.stack([poly_list[poly_idx, vert_idx-1, :], poly_list[poly_idx, vert_idx, :]], 1) 
-        edges2 = np.stack([poly_list[poly_idx, vert_idx, :], poly_list[poly_idx, vert_idx+1, :]], 1)
+        edges1 = np.stack([poly_list[poly_idx, vert_idx-1, :], 
+                           poly_list[poly_idx, vert_idx, :]], 1) 
+        edges2 = np.stack([poly_list[poly_idx, vert_idx, :], 
+                           poly_list[poly_idx, vert_idx+1, :]], 1)
 
         # Take the sum of the cross product of the edge proceeding the vertex and the edge succeeding the vertex
         ccw = np.sum(np.cross(edges1, edges2), axis=1)
@@ -144,13 +146,15 @@ class Polymesh():
     def create_polygon_array(self, x, y):
         """ Converts coordinate and face node data to
         a polygon array, taking into account cyclic
-        polygons (those that cross the anti-meridian [+/- 180])
-        Parameters (from class)
+        polygons (those that cross the anti-meridian [+/- 180]).
+        
+        Parameters (from Class obj)
         ----------
         x : ndarray
             coordinate values for 'x' coordinates
         y : ndarray
             coordinate values for 'y' coordinates
+            
         Returns
         -------
         polygon_array_ccw : ndarray
@@ -229,11 +233,14 @@ class Polymesh():
             # MAYBE new_poly_index = np.array(new_poly_index)
             
             # Projects to new coordinate system from PlateCarree()
-            orig_poly_coords = self.projection.transform_points(ccrs.PlateCarree(), x_coords, y_coords)[:, :, :2]
+            orig_poly_coords = self.projection.transform_points(ccrs.PlateCarree(), 
+                                                                x_coords, y_coords)[:, :, :2]
             
             # Removes polygons that were split in half from original array to avoid double-counting
             orig_poly_coords = np.delete(orig_poly_coords, cyclic_index, axis=0)
-            new_poly_coords = self.projection.transform_points(ccrs.PlateCarree(), new_poly_data[:, 0::2], new_poly_data[:, 1::2])[:, :, :2]
+            new_poly_coords = self.projection.transform_points(ccrs.PlateCarree(), 
+                                                               new_poly_data[:, 0::2], 
+                                                               new_poly_data[:, 1::2])[:, :, :2]
             polygon_array = np.vstack([orig_poly_coords, new_poly_coords])
             
             # Ensures returned polygons are in CCW winding order
@@ -244,12 +251,14 @@ class Polymesh():
     def construct_mesh(self):
         """ Constructs a Polygon Mesh using the calculated
         polygon array and drop index for cyclic polygons
-        Parameters (from class)
+        
+        Parameters (from Class obj)
         ----------
         polygon_array : ndarry
             Array containing Polygon Coordinates (original and new)
         drop_index : ndarray
             Array containing indices to cyclic polygons
+            
         Returns
         -------
         gdf : GeoDataFrame
@@ -280,7 +289,125 @@ class Polymesh():
         # Store our Polygon Geometry in a GeoDataFrame
         return sp.GeoDataFrame({'geometry': polygons})
     
-    def data_mesh(self, target_var, dims, fill='faces'):
+    def calc_derived(self, u, v, target_var='vorticity'):
+        """
+        Based off of a modified Greene's Theorem from Helms and Hart, 2013 
+        (https://doi.org/10.1175/JAMC-D-12-0248.1)
+        """
+
+        if self.model != 'mpas':
+            raise ValueError('Currently only supports MPAS.')
+
+        acceptable_vars = ['vorticity', 'divergence', 'convergence', 
+                           'shearing deformation', 'stretching deformation']
+        if target_var.lower() not in acceptable_vars:
+            raise ValueError(f"Choices of target_var limited to {acceptable_vars}.")
+
+        # Extracts the indices of the dual mesh (triangular) edges
+        edge_idx = self.mesh_ds.edgesOnVertex.values - 1
+
+        # Extracts the indices of the dual mesh (triangular) nodes
+        triangle_idx = self.mesh_ds.cellsOnVertex.values - 1
+
+        # Converts the angle of the cross product between a hexagonal edge and north to degrees
+        # This angle == angle between north and triangle edge 
+        angles = np.rad2deg(self.mesh_ds.angleEdge.values)
+
+        # Extracts the lengths of dual mesh edges (in meters)
+        edge_dist = self.mesh_ds.dcEdge.values
+
+        # Extracts the areas of the dual mesh
+        triangle_areas = self.mesh_ds.areaTriangle.values
+
+        # Extracts Coriolis values at primal mesh vertices/dual mesh centroids
+        coriolis = self.mesh_ds.fVertex.values
+
+        # Breaks the edge lengths into their components
+        delta_x = np.multiply(np.abs(edge_dist), np.cos(90 - angles))
+        delta_y = np.multiply(np.abs(edge_dist), np.sin(90 - angles))
+
+        # Matches u and v components to dual mesh
+        triag_us = u[triangle_idx]
+        triag_vs = v[triangle_idx]
+
+        # Multiplies varies combinations of u, v, dx, and dy
+        udx = np.multiply(triag_us, delta_x[edge_idx])
+        udy = np.multiply(triag_us, delta_y[edge_idx])
+        vdx = np.multiply(triag_vs, delta_x[edge_idx])
+        vdy = np.multiply(triag_vs, delta_y[edge_idx])
+
+        if target_var == 'vorticity':
+
+            # Adds udx + vdy
+            udx_vdy = np.sum([udx, vdy], axis=0)
+
+            # Takes rowwise sum of udx + vdy
+            vort_num = np.sum(udx_vdy, axis=1)
+
+            # Divides by the area of the triangle to get relative vorticity at
+            # triangle centroids/hexagon nodes
+            vorticity = np.divide(vort_num, triangle_areas)
+
+            # Adds in Coriolis to get absolute vorticity
+            abs_vorticity = np.sum([vorticity, coriolis], axis=0)
+
+            # Takes mean across hexagon nodes to get absolute vorticity at hexagon centroids
+            hex_vort = np.mean(abs_vorticity[self.face_nodes], axis=1)
+
+            return hex_vort
+
+        elif target_var == 'divergence' or target_var == 'convergence':
+
+            # Subtracts udy - vdx
+            udy_vdx = np.subtract([udy, vdx], axis=0)
+
+            # Takes rowwise sum of udy - vdx
+            div_num = np.sum(udy_vdx, axis=1)
+
+            # Divides by the area of the triangle to get divergence at 
+            # triangle centroids/hexagon nodes
+            divergence = np.divide(div_num, triangle_areas)
+
+            # Takes mean across hexagon nodes to get divergence at hexagon centroids
+            hex_div = np.mean(divergence[self.face_nodes], axis=1)
+
+            return hex_div
+
+        elif target_var == 'shearing deformation':
+
+            # Subtracts vdy - udx
+            vdy_udx = np.subtract([vdy, udx], axis=0)
+
+            # Takes rowwise sum of vdy - udx
+            shear_num = np.sum(vdy_udx, axis=1)
+
+            # Divides by the area of the triangle to get shearing deformation at 
+            # triangle centroids/hexagon nodes
+            shearing = np.divide(shear_num, triangle_areas)
+
+            # Takes mean across hexagon nodes to get shearing deformation at hexagon centroids
+            hex_shear = np.mean(shearing[self.face_nodes], axis=1)
+
+            return hex_shear
+
+        elif target_var == 'stretching deformation':
+
+            # Adds vdx + udy
+            vdx_udy = np.sum([vdx, udy], axis=0)
+
+            # Takes rowwise sum of vdx + udy
+            stretch_num = np.sum(vdx_udy, axis=1)
+
+            # Divides by the area of the triangle to get stretching deformation at 
+            # triangle centroids/hexagon nodes
+            stretching = np.divide(stretch_num, triangle_areas)
+
+            # Takes mean across hexagon nodes to get stretching deformation at hexagon centroids
+            hex_stretch = np.mean(stretching[self.face_nodes], axis=1)
+
+            return hex_stretch
+    
+    def data_mesh(self, target_var, dims, fill='faces', **kwargs):
         """ Given a Variable Name and Dimensions, returns a
         GeoDataFrame containing geometry and fill values for
         the polygon mesh
@@ -292,6 +419,13 @@ class Polymesh():
             Dictonary of dimensions for data variable (time, level, etc.)
         fill : string
             Method for calculating face values
+            
+        Optional kwargs
+        -----------------
+        derived_kw :: dict, only for visualizing derived quantities 
+                        (vorticity, divergence, or deformation). 
+                        Must include variable names for `u` and `v` in keys.
+        
         Returns
         -------
         gdf : GeoDataFrame
@@ -299,12 +433,27 @@ class Polymesh():
         """
         
         # Ensure a valid variable name is passed through
-        if target_var not in list(self.data_ds.data_vars):
+        derived_opts = list(['vorticity', 'divergence', 'convergence', 
+                            'shearing deformation', 'stretching deformation'])
+        if target_var not in list(self.data_ds.data_vars) + derived_opts:
             raise ValueError('Chosen target variable not in DataSet.')
-            
+        
+        # Unpacks option of plotting derived field
+        derived_kw = kwargs.get('derived_kw', {})
+        if target_var in derived_opts:
+            if 'u' not in derived_kw.keys():
+                raise ValueError("Must supply xarray variable name value for 'u' in 'derived_kw' kwarg.")
+            elif 'v' not in derived_kw.keys():
+                raise ValueError("Must supply xarray variable name value for 'v' in 'derived_kw' kwarg.")
+                
         if fill == 'faces':
-            face_array = self.data_ds[target_var].isel(dims).values
-        elif fill == 'nodes': # TODO: Implement derived fields (cyclic around polygon)
+            if target_var not in derived_opts:
+                face_array = self.data_ds[target_var].isel(dims).values
+            elif target_var in derived_opts:
+                u = self.data_ds[derived_kw['u']].isel(dims).values
+                v = self.data_ds[derived_kw['v']].isel(dims).values
+                face_array = self.calc_derived(u, v, target_var)
+        elif fill == 'nodes':
             if self.model == 'mpas' or self.model == 'cam':
                 raise ValueError(f"There aren't any data on the nodes for the {self.model} model.")
             else:
@@ -347,6 +496,7 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
     holoviews_kw   :: dict - expose plot options with `hv.help(hv.Polygons)`.
     datashader_kw  :: dict - expose rasterization options with `hv.help(hds_rasterize)`.
     coastline_kw   :: dict - expose plotting options with `hv.help(gf.coastline)`
+    lakes_kw       :: dict - expose plotting options with `hv.help(gf.lakes)`.
     out_file_kw    :: dict - must supply filename, but expose other options with `hv.help(hv.save)` for
                         raster images or `?export_svg` for vector images.
     """
@@ -355,9 +505,8 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
     holoviews_kw = kwargs.get('holoviews_kw', {})
     datashader_kw = kwargs.get('datashader_kw', {})
     coastline_kw = kwargs.get('coastline_kw', {})
+    lakes_kw = kwargs.get('lakes_kw', {})
     out_file_kw = kwargs.get('out_file', {})
-    
-    #isinstance(test_dict, dict)
     
     if save_fig == True and not out_file_kw:
         raise ValueError('Must supply kwargs to out_file_kw if you wish to output your figure.')
@@ -366,7 +515,9 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
         
     if plot_bbox != None:
         lon_range, lat_range = plot_bbox
-        x_range, y_range, _ = proj.transform_points(ccrs.PlateCarree(), np.array(lon_range), np.array(lat_range)).T
+        x_range, y_range, _ = proj.transform_points(ccrs.PlateCarree(), 
+                                                    np.array(lon_range), 
+                                                    np.array(lat_range)).T
         if raster == True:
             datashader_kw['x_range'] = tuple(x_range)
             datashader_kw['y_range'] = tuple(y_range)
@@ -377,7 +528,11 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
     if raster == True:
         hv_polys = hv.Polygons(polymesh_df, vdims=['faces']).opts(color='faces') 
         rasterized = hds_rasterize(hv_polys, **datashader_kw) 
-        out_plot = rasterized.opts(**holoviews_kw) * gf.coastline(projection=proj).opts(**coastline_kw)
+        out_plot = rasterized.opts(**holoviews_kw) 
+        if coastline_kw:
+            out_plot = out_plot * gf.coastline(projection=proj).opts(**coastline_kw)
+        if lakes_kw:
+            out_plot = out_plot * gf.lakes(projection=proj).opts(**lakes_kw)
         if save_fig == True:
             print('Exporting raster image...')
             hv.save(out_plot, center=False, **out_file_kw)
@@ -385,7 +540,11 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
             return out_plot
     
     elif raster == False:
-        out_plot = hv.Polygons(polymesh_df, vdims=['faces']).opts(**holoviews_kw) * gf.coastline(projection=proj).opts(**coastline_kw)
+        out_plot = hv.Polygons(polymesh_df, vdims=['faces']).opts(**holoviews_kw) 
+        if coastline_kw:
+            out_plot = out_plot * gf.coastline(projection=proj).opts(**coastline_kw)
+        if lakes_kw:
+            out_plot = out_plot * gf.lakes(projection=proj).opts(**lakes_kw)
         if save_fig == True:
             svg_fig = hv.render(out_plot, backend='bokeh')
             svg_fig.output_backend = 'svg'
@@ -415,6 +574,8 @@ def diverging_colormap(cmin, cmid, cmax, palette, ncolors=256):
     diverge_point_norm = (cmid - cmin) / (cmax - cmin)
     palette_cutoff = round(diverge_point_norm * ncolors)
     palette_split = palette[palette_cutoff:]
-    diverge_cmap = bokeh.palettes.diverging_palette(palette[:palette_cutoff], palette_split[::-1], n=ncolors, midpoint=diverge_point_norm)
+    diverge_cmap = bokeh.palettes.diverging_palette(palette[:palette_cutoff], 
+                                                    palette_split[::-1], n=ncolors, 
+                                                    midpoint=diverge_point_norm)
     
     return diverge_cmap
