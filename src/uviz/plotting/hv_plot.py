@@ -114,7 +114,7 @@ class Polymesh():
     def ensure_ccw_polygons(self, poly_list):
         """
         Function to ensure polygons are in CCW winding order for proper plotting in Datashader.
-        Parameters
+        Parameters:
         --------------
         poly_list : ndarray of polygons
         """
@@ -130,10 +130,8 @@ class Polymesh():
         vert_idx[vert_idx == poly_list.shape[1]-1] = -1
 
         # Finds edges on either side of target vertex
-        edges1 = np.stack([poly_list[poly_idx, vert_idx-1, :], 
-                           poly_list[poly_idx, vert_idx, :]], 1) 
-        edges2 = np.stack([poly_list[poly_idx, vert_idx, :], 
-                           poly_list[poly_idx, vert_idx+1, :]], 1)
+        edges1 = np.stack([poly_list[poly_idx, vert_idx-1, :], poly_list[poly_idx, vert_idx, :]], 1) 
+        edges2 = np.stack([poly_list[poly_idx, vert_idx, :], poly_list[poly_idx, vert_idx+1, :]], 1)
 
         # Take the sum of the cross product of the edge proceeding the vertex and the edge succeeding the vertex
         ccw = np.sum(np.cross(edges1, edges2), axis=1)
@@ -146,15 +144,13 @@ class Polymesh():
     def create_polygon_array(self, x, y):
         """ Converts coordinate and face node data to
         a polygon array, taking into account cyclic
-        polygons (those that cross the anti-meridian [+/- 180]).
-        
-        Parameters (from Class obj)
+        polygons (those that cross the anti-meridian [+/- 180])
+        Parameters (from class)
         ----------
         x : ndarray
             coordinate values for 'x' coordinates
         y : ndarray
             coordinate values for 'y' coordinates
-            
         Returns
         -------
         polygon_array_ccw : ndarray
@@ -233,14 +229,11 @@ class Polymesh():
             # MAYBE new_poly_index = np.array(new_poly_index)
             
             # Projects to new coordinate system from PlateCarree()
-            orig_poly_coords = self.projection.transform_points(ccrs.PlateCarree(), 
-                                                                x_coords, y_coords)[:, :, :2]
+            orig_poly_coords = self.projection.transform_points(ccrs.PlateCarree(), x_coords, y_coords)[:, :, :2]
             
             # Removes polygons that were split in half from original array to avoid double-counting
             orig_poly_coords = np.delete(orig_poly_coords, cyclic_index, axis=0)
-            new_poly_coords = self.projection.transform_points(ccrs.PlateCarree(), 
-                                                               new_poly_data[:, 0::2], 
-                                                               new_poly_data[:, 1::2])[:, :, :2]
+            new_poly_coords = self.projection.transform_points(ccrs.PlateCarree(), new_poly_data[:, 0::2], new_poly_data[:, 1::2])[:, :, :2]
             polygon_array = np.vstack([orig_poly_coords, new_poly_coords])
             
             # Ensures returned polygons are in CCW winding order
@@ -251,14 +244,12 @@ class Polymesh():
     def construct_mesh(self):
         """ Constructs a Polygon Mesh using the calculated
         polygon array and drop index for cyclic polygons
-        
-        Parameters (from Class obj)
+        Parameters (from class)
         ----------
         polygon_array : ndarry
             Array containing Polygon Coordinates (original and new)
         drop_index : ndarray
             Array containing indices to cyclic polygons
-            
         Returns
         -------
         gdf : GeoDataFrame
@@ -291,15 +282,13 @@ class Polymesh():
     
     def calc_derived(self, u, v, target_var='vorticity'):
         """
-        Based off of a modified Greene's Theorem from Helms and Hart, 2013 
-        (https://doi.org/10.1175/JAMC-D-12-0248.1)
+        Based off of a modified Greene's Theorem from Helms and Hart, 2013 (https://doi.org/10.1175/JAMC-D-12-0248.1)
         """
 
         if self.model != 'mpas':
             raise ValueError('Currently only supports MPAS.')
 
-        acceptable_vars = ['vorticity', 'divergence', 'convergence', 
-                           'shearing deformation', 'stretching deformation']
+        acceptable_vars = ['vorticity', 'divergence', 'convergence', 'shearing deformation', 'stretching deformation']
         if target_var.lower() not in acceptable_vars:
             raise ValueError(f"Choices of target_var limited to {acceptable_vars}.")
 
@@ -419,13 +408,6 @@ class Polymesh():
             Dictonary of dimensions for data variable (time, level, etc.)
         fill : string
             Method for calculating face values
-            
-        Optional kwargs
-        -----------------
-        derived_kw :: dict, only for visualizing derived quantities 
-                        (vorticity, divergence, or deformation). 
-                        Must include variable names for `u` and `v` in keys.
-        
         Returns
         -------
         gdf : GeoDataFrame
@@ -508,6 +490,8 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
     lakes_kw = kwargs.get('lakes_kw', {})
     out_file_kw = kwargs.get('out_file', {})
     
+    #isinstance(test_dict, dict)
+    
     if save_fig == True and not out_file_kw:
         raise ValueError('Must supply kwargs to out_file_kw if you wish to output your figure.')
     elif out_file_kw and 'filename' not in out_file_kw.keys():
@@ -515,9 +499,7 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
         
     if plot_bbox != None:
         lon_range, lat_range = plot_bbox
-        x_range, y_range, _ = proj.transform_points(ccrs.PlateCarree(), 
-                                                    np.array(lon_range), 
-                                                    np.array(lat_range)).T
+        x_range, y_range, _ = proj.transform_points(ccrs.PlateCarree(), np.array(lon_range), np.array(lat_range)).T
         if raster == True:
             datashader_kw['x_range'] = tuple(x_range)
             datashader_kw['y_range'] = tuple(y_range)
@@ -574,8 +556,6 @@ def diverging_colormap(cmin, cmid, cmax, palette, ncolors=256):
     diverge_point_norm = (cmid - cmin) / (cmax - cmin)
     palette_cutoff = round(diverge_point_norm * ncolors)
     palette_split = palette[palette_cutoff:]
-    diverge_cmap = bokeh.palettes.diverging_palette(palette[:palette_cutoff], 
-                                                    palette_split[::-1], n=ncolors, 
-                                                    midpoint=diverge_point_norm)
+    diverge_cmap = bokeh.palettes.diverging_palette(palette[:palette_cutoff], palette_split[::-1], n=ncolors, midpoint=diverge_point_norm)
     
     return diverge_cmap
