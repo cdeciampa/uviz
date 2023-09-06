@@ -26,7 +26,7 @@ generate-setup-file = false
 
 # Requirements
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 
 #holoviews = {version = "1.14.9", source = 'conda'}
 #xarray = {version = "2022.3.0", source = 'conda'}
@@ -43,3 +43,30 @@ enable_error_code = [
     "redundant-expr",
     "truthy-bool",
 ]
+
+[tool.pdm.build]
+includes = []
+[project]
+name = "uviz"
+version = "0.1.0dev0"
+description = "Tools for Unstructured model grid VIsualiZation/wrangling."
+authors = [
+    {name = "Corrine DeCiampa", email = "cdeciampa@gmail.com"},
+    {name = "Corrine DeCiampa", email = "cdeciampa@gmail.com> <cnd5285@psu.edu"},
+]
+dependencies = [
+    "uviz @ git+https://github.com/cdeciampa/uviz.git",
+]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["MPAS", "unstructured", "datashader", "data visualization"]
+classifiers = ["Topic :: Software Development", "Framework :: Holoviews, Xarray, Matplotlib", "Programming Language :: Python :: 3"]
+
+[project.urls]
+homepage = "https://github.com/cdeciampa/uviz"
+repository = "https://github.com/cdeciampa/uviz"
+documentation = "https://github.com/cdeciampa/uviz"
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"

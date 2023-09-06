@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from haversine import haversine
 
 class TempestExtremes():
     """
@@ -17,6 +18,8 @@ class TempestExtremes():
             self.df = self.read_te_ASCII(self.file)
             
         self.track_IDs = self.df['tempest_ID'].unique().tolist()
+        
+        self.miami_df = self.miami_storms()
         
     def read_te_ASCII(self, file):
         """
@@ -120,6 +123,15 @@ class TempestExtremes():
         df = df.rename(columns={'track_id':'tempest_ID'})
 
         return df
+
+    def miami_storms(self, df, coords=(25.775163, -80.208615), (distance=500.0, units='km'):
+        
+        df['miami_dist'] = df.apply(lambda x: haversine((x.lat, x.lon), coords, 
+                                                        unit=units, normalize=True), axis=1).round(2)
+        df = df[df['miami_dist'].apply(lambda x: x <= distance)].reset_index(drop=True)
+        storms = df['tempest_ID'].unique()
+
+        return storms
     
 
     
