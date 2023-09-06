@@ -1,6 +1,7 @@
 # ibtracs and other large files
 *ibtracs.since1980.list.v04r00.csv
 *IBTrACS.ALL.v04r00.nc
+*ibtracs.ALL.list.v04r00.csv
 *nexrad*.nc
 
 *figs/flut_gif/*.png
@@ -15,6 +16,7 @@ src/uviz.egg-info
 #!*track_1279_wrangling.ipynb
 *core*
 *.svg
+*pdm*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
