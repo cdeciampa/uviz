@@ -10,17 +10,15 @@ import pyarrow as pa
 import bokeh.palettes
 from bokeh.io import export_svg
 
-import cftime
-
 import holoviews as hv
 from holoviews import opts
 from holoviews.operation.datashader import rasterize as hds_rasterize
 
 import geoviews.feature as gf
+import logging
 
 # Hides inconsequential warning about renaming x and y dims to x and y
-import warnings
-warnings.filterwarnings('ignore', category=UserWarning)
+logging.getLogger("UserWarning").setLevel(logging.CRITICAL)
 
 class Polymesh():
     def __init__(self, mesh_ds, data_ds=None, model='mpas', projection=ccrs.PlateCarree()):
@@ -432,19 +430,10 @@ class Polymesh():
                 
         if fill == 'faces':
             if target_var not in derived_opts:
-                if isinstance(all(dims.values()), int) or not dims:
-                    face_array = self.data_ds[target_var].isel(dims).values
-                elif isinstance(any(dims.values()), (str, cftime._cftime.DatetimeNoLeap, 
-                                                     np.datetime64, pd._libs.tslibs.timestamps.Timestamp)):
-                    face_array = self.data_ds[target_var].sel(dims).values
+                face_array = self.data_ds[target_var].isel(dims).values
             elif target_var in derived_opts:
-                if isinstance(all(dims.values(), int)) or not dims:
-                    u = self.data_ds[derived_kw['u']].isel(dims).values
-                    v = self.data_ds[derived_kw['v']].isel(dims).values
-                elif isinstance(any(dims.values(), (str, cftime._cftime.DatetimeNoLeap, 
-                                                    np.datetime64, pd._libs.tslibs.timestamps.Timestamp))):
-                    u = self.data_ds[derived_kw['u']].sel(dims).values
-                    v = self.data_ds[derived_kw['v']].sel(dims).values
+                u = self.data_ds[derived_kw['u']].isel(dims).values
+                v = self.data_ds[derived_kw['v']].isel(dims).values
                 face_array = self.calc_derived(u, v, target_var)
         elif fill == 'nodes':
             if self.model == 'mpas' or self.model == 'cam':
@@ -490,8 +479,6 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
     datashader_kw  :: dict - expose rasterization options with `hv.help(hds_rasterize)`.
     coastline_kw   :: dict - expose plotting options with `hv.help(gf.coastline)`
     lakes_kw       :: dict - expose plotting options with `hv.help(gf.lakes)`.
-    ocean_kw       :: dict - expose plotting options with `hv.help(gf.ocean)`.'
-    states_kw      :: dict - expose plotting options with `hv.help(gf.states)`.'
     out_file_kw    :: dict - must supply filename, but expose other options with `hv.help(hv.save)` for
                         raster images or `?export_svg` for vector images.
     """
@@ -501,9 +488,9 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
     datashader_kw = kwargs.get('datashader_kw', {})
     coastline_kw = kwargs.get('coastline_kw', {})
     lakes_kw = kwargs.get('lakes_kw', {})
-    ocean_kw = kwargs.get('ocean_kw', {})
-    states_kw = kwargs.get('states_kw', {})
     out_file_kw = kwargs.get('out_file', {})
+    
+    #isinstance(test_dict, dict)
     
     if save_fig == True and not out_file_kw:
         raise ValueError('Must supply kwargs to out_file_kw if you wish to output your figure.')
@@ -513,99 +500,42 @@ def plot_native(polymesh_df, proj=ccrs.PlateCarree(), plot_bbox=None, raster=Tru
     if plot_bbox != None:
         lon_range, lat_range = plot_bbox
         x_range, y_range, _ = proj.transform_points(ccrs.PlateCarree(), np.array(lon_range), np.array(lat_range)).T
-        x_range = tuple(x_range)
-        y_range = tuple(y_range)
         if raster == True:
-            datashader_kw['x_range'] = x_range
-            datashader_kw['y_range'] = y_range
+            datashader_kw['x_range'] = tuple(x_range)
+            datashader_kw['y_range'] = tuple(y_range)
         elif raster == False:
-            holoviews_kw['xlim'] = x_range
-            holoviews_kw['ylim'] = y_range
-    else:
-        x_range = tuple((np.nan, np.nan))
-        y_range = tuple((np.nan, np.nan))
-        
-    # Sets up geometry layer(s)
-    if coastline_kw:
-        coastline_layer = gf.coastline(projection=proj).opts(**coastline_kw, xlim=x_range, ylim=y_range)
-    if lakes_kw:
-        lakes_layer = gf.lakes(projection=proj).opts(**lakes_kw, xlim=x_range, ylim=y_range)
-    if ocean_kw:
-        ocean_layer = gf.ocean(projection=proj).opts(**ocean_kw, xlim=x_range, ylim=y_range)
-    if states_kw:
-        states_layer = gf.states(projection=proj).opts(**states_kw, xlim=x_range, ylim=y_range)
-        
-    # Plots underlying polygons
+            holoviews_kw['xlim'] = tuple(x_range)
+            holoviews_kw['ylim'] = tuple(y_range)
+    
     if raster == True:
         hv_polys = hv.Polygons(polymesh_df, vdims=['faces']).opts(color='faces') 
         rasterized = hds_rasterize(hv_polys, **datashader_kw) 
-        out_plot = rasterized.opts(**holoviews_kw)   
-    elif raster == False:
-        out_plot = hv.Polygons(polymesh_df, vdims=['faces']).opts(**holoviews_kw) 
-        
-    # Plots geometry layer(s)
-    if coastline_kw and lakes_kw and ocean_kw and states_kw:
-        if lakes_kw['fill_color'] == 'none' and states_kw['fill_color'] == 'none':
-            geom_layers = (ocean_layer * states_layer * coastline_layer * lakes_layer)
-            out_plot = out_plot * geom_layers
-        else:
-            geom_layers = (ocean_layer * states_layer * lakes_layer)
-            out_plot = geom_layers * out_plot * coastline_layer
-    elif coastline_kw and lakes_kw and ocean_kw and not states_kw:
-        if lakes_kw['fill_color'] == 'none':
-            geom_layers = (ocean_layer * coastline_layer * lakes_layer)
-            out_plot = out_plot * geom_layers
-        else:
-            geom_layers = (ocean_layer * coastline_layer)
-            out_plot = lakes_layer * out_plot * geom_layers
-    elif coastline_kw and lakes_kw and states_kw and not ocean_kw:
-        if lakes_kw['fill_color'] == 'none':
-            if states_kw['fill_color'] == 'none':
-                geom_layers = (states_layer * coastline_layer * lakes_layer)
-                out_plot = out_plot * geom_layers
-            else:
-                geom_layers = (coastline_layer * lakes_layer)
-                out_plot = states_layer * out_plot * geom_layers
-        else:
-            if states_kw['fill_color'] == 'none':
-                geom_layers = (states_layer * coastline_layer * lakes_layer)
-                out_plot = out_plot * geom_layers
-            else:
-                geom_layers = (states_layer * lakes_layer)
-                out_plot = geom_layers * out_plot * coastline_layer
-    elif coastline_kw and states_kw and not ocean_kw and not lakes_kw:
-        if states_kw['fill_color'] == 'none':
-            geom_layers = (states_layer * coastline_layer)
-            out_plot = out_plot * geom_layers
-        else:
-            out_plot = states_layer * out_plot * coastline_layer
-    elif coastline_kw and lakes_kw and not ocean_kw and not states_kw:
-        if lakes_kw['fill_color'] == 'none':
-            geom_layers = (coastline_layer * lakes_layer)
-            out_plot = out_plot * geom_layers
-        else:
-            out_plot = lakes_layer * out_plot * coastline_layer
-    elif coastline_kw and not lakes_kw and not ocean_kw and not states_kw:
-        out_plot = out_plot * coastline_layer
-    elif not coastline_kw and not lakes_kw and not ocean_kw and not states_kw:
-        print('No geometry features selected for plotting.')
-    else:
-        raise KeyError('Limited number of geometry feature combinations is supported.')
-
-    if save_fig == True:
-        if raster == True:
+        out_plot = rasterized.opts(**holoviews_kw) 
+        if coastline_kw:
+            out_plot = out_plot * gf.coastline(projection=proj).opts(**coastline_kw)
+        if lakes_kw:
+            out_plot = out_plot * gf.lakes(projection=proj).opts(**lakes_kw)
+        if save_fig == True:
             print('Exporting raster image...')
             hv.save(out_plot, center=False, **out_file_kw)
-        elif raster == False:
+        else:
+            return out_plot
+    
+    elif raster == False:
+        out_plot = hv.Polygons(polymesh_df, vdims=['faces']).opts(**holoviews_kw) 
+        if coastline_kw:
+            out_plot = out_plot * gf.coastline(projection=proj).opts(**coastline_kw)
+        if lakes_kw:
+            out_plot = out_plot * gf.lakes(projection=proj).opts(**lakes_kw)
+        if save_fig == True:
             svg_fig = hv.render(out_plot, backend='bokeh')
             svg_fig.output_backend = 'svg'
-
             svg_fig.background_fill_color = None
             svg_fig.border_fill_color = None
             print('Exporting vector image...')
             export_svg(svg_fig, filename=out_file_kw['filename'])
-    elif save_fig == False:
-        return out_plot
+        else:
+            return out_plot
         
 def diverging_colormap(cmin, cmid, cmax, palette, ncolors=256):
     """
@@ -626,8 +556,6 @@ def diverging_colormap(cmin, cmid, cmax, palette, ncolors=256):
     diverge_point_norm = (cmid - cmin) / (cmax - cmin)
     palette_cutoff = round(diverge_point_norm * ncolors)
     palette_split = palette[palette_cutoff:]
-    diverge_cmap = bokeh.palettes.diverging_palette(palette[:palette_cutoff], 
-                                                    palette_split[::-1], n=ncolors, 
-                                                    midpoint=diverge_point_norm)
+    diverge_cmap = bokeh.palettes.diverging_palette(palette[:palette_cutoff], palette_split[::-1], n=ncolors, midpoint=diverge_point_norm)
     
     return diverge_cmap
